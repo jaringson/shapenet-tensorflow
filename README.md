@@ -2,7 +2,7 @@
 
 Instructions on getting wieght file (.npy) as shown in test_load.py (Assumed that Tensorflow is installed):
 
-1. Install Caffe (This step might not be necessary) <br />
+1. Install Caffe (This step might not be necessary but has worked for me) <br />
 	a. Clone https://github.com/BVLC/caffe <br />
   b. Follow these steps: https://github.com/BVLC/caffe/wiki/Ubuntu-16.04-or-15.10-Installation-Guide
 
