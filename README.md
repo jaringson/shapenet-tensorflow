@@ -20,6 +20,7 @@ Instructions on getting wieght file (.npy) as shown in test_load.py (Assumed tha
   b. (Optional) Rename it to shapenet_tensor.npy to run with test_load.py
 
 <br />
+<br />
 
 Do the steps below if you need to reuse the convert script (done in step 4 above):
 
