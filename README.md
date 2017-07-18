@@ -16,7 +16,7 @@ Instructions on getting wieght file (.npy) as shown in test_load.py (Assumed tha
     </pre>
 
 4. Clone https://github.com/ethereon/caffe-tensorflow.git <br />
-  a. Follow instructions to create npy and py files <br />
+  a. Follow instructions to create npy and py files found under examples/mnist/ <br />
   b. (Optional) Rename it to shapenet_tensor.npy to run with test_load.py
 
 <br />
