@@ -2,7 +2,7 @@
 
 Instructions on getting wieght file (.npy) as shown in test_load.py (Assumed that Tensorflow is installed):
 
-1. Install Caffe (if not installed) <br />
+1. Install Caffe (This step might not be necessary but has worked for me) <br />
 	a. Clone https://github.com/BVLC/caffe <br />
   b. Follow these steps: https://github.com/BVLC/caffe/wiki/Ubuntu-16.04-or-15.10-Installation-Guide
 
@@ -16,8 +16,8 @@ Instructions on getting wieght file (.npy) as shown in test_load.py (Assumed tha
     </pre>
 
 4. Clone https://github.com/ethereon/caffe-tensorflow.git <br />
-  a. Follow instructions to create npy and py files <br />
-  b. (Optional) Rename it to shapenet_tensor.npy to run with test_load.py
+  a. Follow instructions to create npy and py files found under examples/mnist/ <br />
+  b. (Optional) Rename generated file to shapenet_tensor.npy to run with test_load.py
 
 <br />
 <br />
