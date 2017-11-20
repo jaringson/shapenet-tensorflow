@@ -9,9 +9,9 @@ sess = tf.InteractiveSession()
 
 # placeholders
 x = tf.placeholder(tf.float32, shape=[None,100*100])
-a_ = tf.placeholder(tf.float32, shape=[None, 360])
-e_ = tf.placeholder(tf.float32, shape=[None, 360])
-t_ = tf.placeholder(tf.float32, shape=[None, 360])
+a_ = tf.placeholder(tf.float32, shape=[None, 1])
+e_ = tf.placeholder(tf.float32, shape=[None, 1])
+t_ = tf.placeholder(tf.float32, shape=[None, 1])
 sigma_ = tf.placeholder(tf.float32)
 
 keep_prob = tf.placeholder(tf.float32)
@@ -75,14 +75,14 @@ with tf.name_scope('Cost'):
     # a_ = in
     # a_conv = guess
     delta_angle = tf.acos(tf.sin(e_)*tf.sin(e_conv)+tf.cos(e_)*tf.cos(e_conv)*tf.cos(tf.abs(a_-a_conv)))
-    d = delta_angle + tf.sqrt(tf.square(t_)-tf.square(t_conv))
-    cross_entropies = tf.reduce_mean(-tf.reduce_sum(tf.exp(-d/sigma_)  * tf.log(tf.clip_by_value(a_conv,1e-10,1.0)), axis=[1])) + \
-                        tf.reduce_mean(-tf.reduce_sum(tf.exp(-d/sigma_)  * tf.log(tf.clip_by_value(e_conv,1e-10,1.0)), axis=[1])) + \
-                        tf.reduce_mean(-tf.reduce_sum(tf.exp(-d/sigma_)  * tf.log(tf.clip_by_value(t_conv,1e-10,1.0)), axis=[1]))
+    d_loss = delta_angle + tf.sqrt(tf.square(t_)-tf.square(t_conv))
+    #cross_entropies = tf.reduce_mean(-tf.reduce_sum(tf.exp(-d/sigma_)  * tf.log(tf.clip_by_value(a_conv,1e-10,1.0)), axis=[1])) + \
+    #                    tf.reduce_mean(-tf.reduce_sum(tf.exp(-d/sigma_)  * tf.log(tf.clip_by_value(e_conv,1e-10,1.0)), axis=[1])) + \
+    #                    tf.reduce_mean(-tf.reduce_sum(tf.exp(-d/sigma_)  * tf.log(tf.clip_by_value(t_conv,1e-10,1.0)), axis=[1]))
 
 
 with tf.name_scope('Optimizer'):
-    train_step = tf.train.AdamOptimizer(1e-6).minimize(cross_entropies)
+    train_step = tf.train.AdamOptimizer(1e-6).minimize(d_loss)
 
 
 with tf.name_scope('Accuracy'):
@@ -134,6 +134,7 @@ for i in range(max_steps):
 
         print("Train: %d, %g, %g, %g "%(i, ac, ec, tc))
         train_writer.add_summary(summary_str,i)
+	saver.save(sess, "tf_logs/"+BASE_DIR+"/classification_mode.ckpt")
 
     train_step.run(feed_dict={
                 x: batch[0],
