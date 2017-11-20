@@ -28,8 +28,8 @@ def next_batch(batch):
     output.append([])
 
     for _ in range(batch):
-        model_i = np.random.randint(len(all_models))
-        image_i = np.random.randint(1000)
+        model_i = 0 #np.random.randint(len(all_models))
+        image_i = 0 #np.random.randint(1000)
 
 	model = all_models[model_i]
 	image = model+'/'+str(image_i)+'.png'
@@ -57,9 +57,9 @@ def next_batch(batch):
 	 
         
 	output[0].append(img.tolist())
-	output[1].append(int(angles[0]))
-	output[2].append(int(angles[1]))
-	output[3].append(int(angles[2]))
+	output[1].append([int(angles[0])])
+	output[2].append([int(angles[1])])
+	output[3].append([int(angles[2])])
 	#output[1].append(az_one_hot)
         #output[2].append(el_one_hot)
         #output[3].append(ti_one_hot)
@@ -69,11 +69,13 @@ def next_batch(batch):
 
 if __name__ == '__main__':
     num = 2
-    #start = time.time()
-    b = next_batch(50)
-    #end = time.time()
-    #print(end-start)
-    # print b[1], b2], b[3]
+    start = time.time()
+    b = next_batch(100)
+    end = time.time()
+    print(end-start)
+    print b[1] 
+    print b[2] 
+    print b[3]
     #for i in range(num):
     #    im = np.array(b[0][i])
     #    im = im.reshape([100,100])

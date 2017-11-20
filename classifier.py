@@ -97,25 +97,86 @@ sigma_ = tf.placeholder(tf.float32)
 
 keep_prob = tf.placeholder(tf.float32)
 
-c1 = conv(x,num_filters=64)
-print c1.get_shape
-c2 = conv(c1,num_filters=64)
-print c2.get_shape
-c3 = conv(c2,num_filters=64)
-print c3.get_shape
+x_img = tf.reshape(x, [-1,100,100,1])
 
+c1 = conv(x_img,num_filters=200,stride=2,name='C1')
+print c1.get_shape()
+c2 = conv(c1,num_filters=800,stride=2,name='C2')
+print c2.get_shape()
+c3 = conv(c2,num_filters=800,stride=2,name='C3')
+print c3.get_shape()
 
-'''
-max_steps = 1 # 1600
+last = c3
 
-print("step, azimuth, elevation, tilt")
+shape = last.get_shape().as_list()
+f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
+f1 = fc(f_flat,out_size=1000,name='F1')
+print f1.get_shape()
+f2 = fc(f1,out_size=100,name='F2')
+
+a_conv =  tf.sigmoid(fc(f2,out_size=1,is_output=True,name='az')) * 360
+e_conv =     tf.tanh(fc(f2,out_size=1,is_output=True,name='el')) * 90.0
+t_conv =  tf.sigmoid(fc(f2,out_size=1,is_output=True,name='tr')) * 360
+
+with tf.name_scope('Cost'):
+    a = a_ * np.pi/180.0 
+    a_conv *= np.pi/180.0 
+    e = e_ * np.pi/180.0 
+    e_conv *= np.pi/180.0 
+    t = t_ * np.pi/180.0 
+    t_conv *= np.pi/180.0 
+    
+    temp = tf.sin(e)*tf.sin(e_conv) + tf.cos(e) * tf.cos(e_conv) * tf.cos(tf.abs(a-a_conv))  
+    delta_angle = tf.acos(tf.clip_by_value(tf.sin(e)*tf.sin(e_conv) + tf.cos(e) * tf.cos(e_conv) * tf.cos(tf.abs(a-a_conv)), -0.9999, 0.9999))
+    print delta_angle.get_shape()
+    inner = delta_angle + tf.abs(t - t_conv)
+    print inner.get_shape()
+    d_loss = tf.reduce_mean(inner)
+    print d_loss.get_shape()
+
+with tf.name_scope('Optimizer'):
+    train_step = tf.train.AdamOptimizer(1e-2).minimize(d_loss)
+
+with tf.name_scope('Accuracy'):
+    a_acc = tf.reduce_mean(tf.abs(a-a_conv))
+    e_acc = tf.reduce_mean(tf.abs(e-e_conv)) 
+    t_acc = tf.reduce_mean(tf.abs(t-t_conv))
+
+acc_summary = tf.summary.scalar( 'azimuth accuracy', a_acc )
+acc_summary = tf.summary.scalar( 'elevation accuracy', e_acc )
+acc_summary = tf.summary.scalar( 'tilt accuracy', t_acc )
+loss_summary = tf.summary.scalar( 'loss', d_loss )
+
+merged_summary_op = tf.summary.merge_all()
+
+BASE_DIR = 'a'
+
+train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR,graph=sess.graph)
+
+sess.run(tf.global_variables_initializer())
+
+saver = tf.train.Saver()
+
+max_steps = 5000
+
+print("step, azimuth, elevation, tilt, loss")
 for i in range(max_steps):
     batch = batch_utils.next_batch(50)
-
+    '''print sess.run([
+                temp ,d_loss
+                ],
+                feed_dict={
+                x: batch[0],
+                a_: batch[1],
+                e_: batch[2],
+                t_: batch[3],
+                sigma_: 1/max_steps,
+                keep_prob: 0.5})
+    '''
     if i%10 == 0:
-        summary_str,ac,ec,tc = sess.run([
+        summary_str,ac,ec,tc,loss_r = sess.run([
                 merged_summary_op,
-                a_acc,e_acc,t_acc],
+                a_acc,e_acc,t_acc,d_loss],
                 feed_dict={
                 x: batch[0],
                 a_: batch[1],
@@ -124,9 +185,9 @@ for i in range(max_steps):
                 sigma_: 1/max_steps,
                 keep_prob: 0.5})
 
-        print("Train: %d, %g, %g, %g "%(i, ac, ec, tc))
+        print("Train: %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
         train_writer.add_summary(summary_str,i)
-        saver.save(sess, "tf_logs/"+BASE_DIR+"/classification_mode.ckpt")
+        saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
 
     train_step.run(feed_dict={
                 x: batch[0],
@@ -136,7 +197,7 @@ for i in range(max_steps):
                 sigma_: 1/max_steps,
                 keep_prob: 0.5})
 
-saver.save(sess, "tf_logs/"+BASE_DIR+"/classification_mode.ckpt")
+saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
 train_writer.close()
-'''
+
 
