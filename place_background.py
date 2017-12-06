@@ -15,7 +15,7 @@ all_views = []
 #print 'Found models: '
 #print all_models
 
-out_main_dir = 'training'
+out_main_dir = 'training_150'
 for model in all_models:
     print model
     out_dir = os.path.join(out_main_dir, model.split('/')[3]) 
@@ -29,7 +29,7 @@ for model in all_models:
 	background = Image.open('white-background.png')
 	background.paste(img, (background.size[0]/2-img.size[0]/2 + np.random.randint(-200,200),
 		background.size[1]/2-img.size[1]/2 + np.random.randint(-200,200)), img)
-	background = background.resize((100,100), Image.ANTIALIAS)
+	background = background.resize((150,150), Image.ANTIALIAS)
 	
 	outfile = os.path.join(out_dir,str(i)+'.png')
 	background.save(outfile)
