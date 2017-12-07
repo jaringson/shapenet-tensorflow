@@ -88,6 +88,44 @@ def fc( x, out_size=50, is_output=False, name="fc" ):
         return h
 
 
+def get_stats(sess, batch, writer, fig, testing=False):
+    prefix = 'Training'
+    if testing:
+	prefix = 'Testing'
+    summary_str,ac,ec,tc,loss_r,a_c,e_c,t_c = sess.run([
+                merged_summary_op,
+                a_acc,e_acc,t_acc,loss,
+		a_conv,e_conv,t_conv],
+                feed_dict={
+                x: batch[0],
+                a_: batch[1],
+                e_: batch[2],
+                t_: batch[3],
+		dist_a: batch[4],
+		dist_e: batch[5],
+		dist_t: batch[6],
+                sigma_: sigma_val,
+                keep_prob: kp_in})
+    plt.clf()
+    plt.bar(range(-180,180),a_c[0,:],1)
+    plt.title(prefix+' Azimuth: '+str(batch[1][0][0]*180/np.pi))
+    plt.pause(0.00001)
+    fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_azimuth.png')
+
+    plt.clf()
+    plt.bar(range(-90,90),e_c[0,:],1)
+    plt.title(prefix+' Elevation: '+str(batch[2][0][0]*180/np.pi))
+    plt.pause(0.00001)
+    fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_elevation.png')
+	
+    plt.clf()
+    plt.bar(range(-180,180),t_c[0,:],1)
+    plt.title(prefix+' Tilt: '+str(batch[3][0][0]*180/np.pi))
+    plt.pause(0.00001)
+    fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_tilt.png')
+ 
+    print(prefix+": %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
+    writer.add_summary(summary_str,i)
 
 # placeholders
 x = tf.placeholder(tf.float32, shape=[None,150*150])
@@ -111,17 +149,18 @@ print c2.get_shape()
 c3 = conv(c2,num_filters=64,stride=2,name='C3')
 print c3.get_shape()
 
-last = c2
+last = c3
 
 shape = last.get_shape().as_list()
 f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
-f1 = fc(f_flat,out_size=100,name='F1')
+f1 = fc(f_flat,out_size=1000,name='F1')
 print f1.get_shape()
-f2 = fc(f1,out_size=10,name='F2')
+f2 = fc(f1,out_size=500,name='F2')
+f2_drop = tf.nn.dropout(f2, keep_prob)
 
-a_conv = tf.nn.softmax(fc(f2,out_size=360,is_output=True,name='az'))
-e_conv = tf.nn.softmax(fc(f2,out_size=180,is_output=True,name='el'))
-t_conv = tf.nn.softmax(fc(f2,out_size=360,is_output=True,name='ti'))
+a_conv = tf.nn.softmax(fc(f2_drop,out_size=360,is_output=True,name='az'))
+e_conv = tf.nn.softmax(fc(f2_drop,out_size=180,is_output=True,name='el'))
+t_conv = tf.nn.softmax(fc(f2_drop,out_size=360,is_output=True,name='ti'))
 
 with tf.name_scope('Cost'):
     loss_a = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_a, tf.float32)/sigma_) * tf.log(tf.clip_by_value(a_conv,1e-10,1.0)), axis=1))
@@ -145,18 +184,23 @@ merged_summary_op = tf.summary.merge_all()
 
 BASE_DIR = 'g'
 
-train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR,graph=sess.graph)
+
+train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
+test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
 
 sess.run(tf.global_variables_initializer())
 
 saver = tf.train.Saver()
-#saver.restore(sess, 'tf_logs/c/shapenet.ckpt')
+saver.restore(sess, 'tf_logs/f/shapenet.ckpt')
 
-max_steps = 5000000
+max_steps = 100000
 
 fig = plt.figure(0)
 print("step, azimuth, elevation, tilt, loss")
+
 for i in range(max_steps):
+    sigma_val = 1.0/(1+i*0.001) 
+    kp_in = 0.50
     batch = batch_utils.next_batch(50)
     '''print sess.run([
                 a_conv, loss_a ,loss
@@ -169,46 +213,16 @@ for i in range(max_steps):
 		dist_a: batch[4],
 		dist_e: batch[5],
 		dist_t: batch[6],
-                sigma_: 1.0/(1+i),
-                keep_prob: 0.5})
+                sigma_: sigma_val,
+                keep_prob: kp_in})
     '''
-    
     if i%100 == 0:
-        summary_str,ac,ec,tc,loss_r,a_c,e_c,t_c = sess.run([
-                merged_summary_op,
-                a_acc,e_acc,t_acc,loss,
-		a_conv,e_conv,t_conv],
-                feed_dict={
-                x: batch[0],
-                a_: batch[1],
-                e_: batch[2],
-                t_: batch[3],
-		dist_a: batch[4],
-		dist_e: batch[5],
-		dist_t: batch[6],
-                sigma_: 1.0/(1+i),
-                keep_prob: 0.5})
-	plt.clf()
-	plt.bar(range(0,360),a_c[0,:],1)
-	plt.title('Azimuth: '+str(batch[1][0][0]*180/np.pi))
-	plt.pause(0.00001)
-	fig.savefig('tf_logs/'+BASE_DIR+'/azimuth.png')
-	
-	plt.clf()
-	plt.bar(range(-90,90),e_c[0,:],1)
-	plt.title('Elevation: '+str(batch[2][0][0]*180/np.pi))
-	plt.pause(0.00001)
-	fig.savefig('tf_logs/'+BASE_DIR+'/elevation.png')
-	
-	plt.clf()
-	plt.bar(range(0,360),t_c[0,:],1)
-	plt.title('Tilt: '+str(batch[3][0][0]*180/np.pi))
-	plt.pause(0.00001)
-	fig.savefig('tf_logs/'+BASE_DIR+'/tilt.png')
-
-        print("Train: %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
-        train_writer.add_summary(summary_str,i)
+        get_stats(sess, batch, train_writer, fig)
         saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
+    
+    if i%500 == 0:
+        test_batch = batch_utils.next_batch(50, testing=True)
+        get_stats(sess, test_batch, test_writer, fig, testing=True)
     
     train_step.run(feed_dict={
                 x: batch[0],
@@ -218,10 +232,10 @@ for i in range(max_steps):
 		dist_a: batch[4],
 		dist_e: batch[5],
 		dist_t: batch[6],
-                sigma_: 1.0/(1+i),
-                keep_prob: 0.5})
+                sigma_: sigma_val,
+                keep_prob: kp_in})
 
 saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
 train_writer.close()
-
+test_writer.close()
 
