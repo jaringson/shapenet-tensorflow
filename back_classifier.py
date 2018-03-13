@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import numpy as np 
 import tensorflow as tf
-import batch_utils
+import back_batch_utils
+import cut_backgrounds
 from scipy.misc import imsave
 import matplotlib.pyplot as plt
 
@@ -108,27 +109,33 @@ def get_stats(sess, batch, writer, fig, testing=False):
                 keep_prob: kp_in})
     plt.clf()
     plt.bar(range(-180,180),a_c[0,:],1)
-    plt.title(prefix+' Azimuth: '+str(batch[1][0][0]*180/np.pi))
+    plt.title(prefix+' Yaw: '+str(batch[1][0][0]*180/np.pi))
     plt.pause(0.00001)
     fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_azimuth.png')
 
     plt.clf()
     plt.bar(range(-90,90),e_c[0,:],1)
-    plt.title(prefix+' Elevation: '+str(batch[2][0][0]*180/np.pi))
+    plt.title(prefix+' Pitch: '+str(batch[2][0][0]*180/np.pi))
     plt.pause(0.00001)
     fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_elevation.png')
 	
     plt.clf()
     plt.bar(range(-180,180),t_c[0,:],1)
-    plt.title(prefix+' Tilt: '+str(batch[3][0][0]*180/np.pi))
+    plt.title(prefix+' Roll: '+str(batch[3][0][0]*180/np.pi))
     plt.pause(0.00001)
     fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_tilt.png')
+
+
+    from scipy.misc import imsave
+    im = np.array(batch[0][0])
+    im = im.reshape([150,150,3])
+    imsave('./tf_logs/' +BASE_DIR+'/'+prefix+'_image.png',im)    
  
     print(prefix+": %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
     writer.add_summary(summary_str,i)
 
 # placeholders
-x = tf.placeholder(tf.float32, shape=[None,150*150])
+x = tf.placeholder(tf.float32, shape=[None,150*150*3])
 a_ = tf.placeholder(tf.float32, shape=[None, 1])
 e_ = tf.placeholder(tf.float32, shape=[None, 1])
 t_ = tf.placeholder(tf.float32, shape=[None, 1])
@@ -140,18 +147,20 @@ dist_t = tf.placeholder(tf.int32, shape=[None,360])
 
 keep_prob = tf.placeholder(tf.float32)
 
-x_img = tf.reshape(x, [-1,150,150,1])
+x_img = tf.reshape(x, [-1,150,150,3])
 
-c1 = conv(x_img,num_filters=4,stride=2,name='C1')
+c1 = conv(x_img,num_filters=12,stride=2,name='C1')
 print c1.get_shape()
-c2 = conv(c1,num_filters=16,stride=2,name='C2')
+c2 = conv(c1,num_filters=48,stride=2,name='C2')
 print c2.get_shape()
-c3 = conv(c2,num_filters=64,stride=2,name='C3')
+c3 = conv(c2,num_filters=192,stride=2,name='C3')
 print c3.get_shape()
-c4 = conv(c3,num_filters=256,stride=2,name='C4')
+c4 = conv(c3,num_filters=768,stride=2,name='C4')
 print c4.get_shape()
+c5 = conv(c4,num_filters=768,stride=1,name='C5')
+print c5.get_shape()
 
-last = c4
+last = c5
 
 shape = last.get_shape().as_list()
 f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
@@ -173,9 +182,9 @@ with tf.name_scope('Optimizer'):
     train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
 
 with tf.name_scope('Accuracy'):
-    a_acc = tf.reduce_mean(tf.abs(a_-a_conv))
-    e_acc = tf.reduce_mean(tf.abs(e_-e_conv)) 
-    t_acc = tf.reduce_mean(tf.abs(t_-t_conv))
+    a_acc = tf.reduce_mean(tf.abs(a_-tf.reduce_max(a_conv,axis=1)))
+    e_acc = tf.reduce_mean(tf.abs(e_-tf.reduce_max(e_conv,axis=1))) 
+    t_acc = tf.reduce_mean(tf.abs(t_-tf.reduce_max(t_conv,axis=1)))
 
 acc_summary = tf.summary.scalar( 'azimuth accuracy', a_acc )
 acc_summary = tf.summary.scalar( 'elevation accuracy', e_acc )
@@ -184,7 +193,7 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-BASE_DIR = 'm'
+BASE_DIR = 't'
 
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
@@ -193,7 +202,7 @@ test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
 sess.run(tf.global_variables_initializer())
 
 saver = tf.train.Saver()
-#saver.restore(sess, 'tf_logs/f/shapenet.ckpt')
+#saver.restore(sess, 'tf_logs/q/shapenet.ckpt')
 
 max_steps = 100000
 
@@ -203,7 +212,7 @@ print("step, azimuth, elevation, tilt, loss")
 for i in range(max_steps):
     sigma_val = 1.0 #1.0/(1+i*0.001) 
     kp_in = 0.50
-    batch = batch_utils.next_batch(50)
+    batch = back_batch_utils.next_batch(50)
     '''print sess.run([
                 a_conv, loss_a ,loss
                 ],
@@ -223,9 +232,10 @@ for i in range(max_steps):
         saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
     
     if i%500 == 0:
-        test_batch = batch_utils.next_batch(50, testing=True)
+        test_batch = back_batch_utils.next_batch(50, testing=True)
         get_stats(sess, test_batch, test_writer, fig, testing=True)
-    
+	cut_backgrounds.cut(10)   
+ 
     train_step.run(feed_dict={
                 x: batch[0],
                 a_: batch[1],
