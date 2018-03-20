@@ -99,7 +99,8 @@ def next_batch(batch, testing=False):
 		
 		img = Image.open(image)
 		img = img.rotate(extra_d)
-		img = img.resize((final_size+150,final_size+150))
+		upsize = np.random.randint(50,150)
+		img = img.resize((final_size+upsize,final_size+upsize))
 		
 		#background = Image.open(np.random.choice(all_backgrounds))
 		rand_back = all_backgrounds[np.random.randint(len(all_backgrounds))]  

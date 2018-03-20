@@ -280,7 +280,7 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-BASE_DIR = 'a'
+BASE_DIR = 'c'
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
 test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
@@ -288,7 +288,7 @@ test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
 sess.run(tf.global_variables_initializer())
 
 saver = tf.train.Saver()
-#saver.restore(sess, 'tf_logs/q/shapenet.ckpt')
+saver.restore(sess, 'tf_logs/a/shapenet.ckpt')
 
 max_steps = 100000
 
