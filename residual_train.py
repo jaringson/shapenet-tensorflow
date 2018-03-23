@@ -178,7 +178,13 @@ def get_stats(sess, batch, writer, fig, testing=False):
     prefix = 'Training'
     if testing:
         prefix = 'Testing'
-    summary_str,ac,ec,tc,loss_r,a_c,e_c,t_c = sess.run([
+        a_c,e_c,t_c = sess.run([
+                a_conv,e_conv,t_conv],
+                feed_dict={
+                x: batch[0],
+		is_training:True})
+    else:
+        summary_str,ac,ec,tc,loss_r,a_c,e_c,t_c = sess.run([
                 merged_summary_op,
                 a_acc,e_acc,t_acc,loss,
                 a_conv,e_conv,t_conv],
@@ -192,6 +198,8 @@ def get_stats(sess, batch, writer, fig, testing=False):
                 dist_t: batch[6],
                 sigma_: sigma_val,
 		is_training:True})
+        print(prefix+": %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
+        writer.add_summary(summary_str,i)
 
     plt.clf()
     plt.bar(range(-180,180),a_c[0,:],1)
@@ -217,8 +225,6 @@ def get_stats(sess, batch, writer, fig, testing=False):
     im = im.reshape([150,150,3])
     imsave('./tf_logs/' +BASE_DIR+'/'+prefix+'_image.png',im)
 
-    print(prefix+": %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
-    writer.add_summary(summary_str,i)
 
 def fc( x, out_size=50, is_output=False, name="fc" ):
     with tf.variable_scope(name) as scope:
@@ -280,7 +286,7 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-BASE_DIR = 'c'
+BASE_DIR = 'g'
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
 test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
@@ -288,7 +294,7 @@ test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
 sess.run(tf.global_variables_initializer())
 
 saver = tf.train.Saver()
-saver.restore(sess, 'tf_logs/a/shapenet.ckpt')
+saver.restore(sess, 'tf_logs/e/shapenet.ckpt')
 
 max_steps = 100000
 

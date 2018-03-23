@@ -99,10 +99,10 @@ def next_batch(batch, testing=False):
 		
 		img = Image.open(image)
 		img = img.rotate(extra_d)
-		upsize = np.random.randint(50,150)
+		upsize = np.random.randint(50,200)
 		img = img.resize((final_size+upsize,final_size+upsize))
 
-		pixelSize = np.random.randint(1,3)
+		pixelSize = np.random.randint(1,5)
 	
 		img = img.resize((img.size[0]/pixelSize, img.size[1]/pixelSize), Image.NEAREST)
 		img = img.resize((img.size[0]*pixelSize, img.size[1]*pixelSize), Image.NEAREST)
@@ -125,17 +125,19 @@ def next_batch(batch, testing=False):
                 #noise = np.random.randn(final_size,final_size,3)                
                 #noise = noise.reshape(final_size,final_size,3)
                 #noise_img = np.array(background) + np.array(background) * noise
-
-                ## Gausian noise
-                mean = np.random.randint(0,50)
-                var = np.random.randint(0,200)
-                #print(var)
-                sigma = var**0.5
-                gauss = np.random.normal(mean,sigma,(final_size,final_size,3))
-                gauss = gauss.reshape(final_size,final_size,3)
-                noise_img = np.array(background) + gauss
+		if np.random.randint(2):
+                    ## Gausian noise
+                    mean = np.random.randint(0,50)
+                    var = np.random.randint(0,200)
+                    #print(var)
+                    sigma = var**0.5
+                    gauss = np.random.normal(mean,sigma,(final_size,final_size,3))
+                    gauss = gauss.reshape(final_size,final_size,3)
+                    noise_img = np.array(background) + gauss
                 
-                img = noise_img.flatten() / 255.0 
+                    img = noise_img.flatten() / 255.0
+		else:
+		    img = np.array(background).flatten() / 255.0 
 		#print img.shape
 			
 		yaw_dist = []
@@ -179,7 +181,7 @@ def next_batch(batch, testing=False):
 
 
 if __name__ == '__main__':
-    num = 2
+    num = 50
     start = time.time()
     b = next_batch(num)
     end = time.time()
@@ -196,5 +198,5 @@ if __name__ == '__main__':
         im = np.array(b[0][i])
         im = im.reshape([150,150,3])
         #imsave(str(i)+'.png', im)
-        imshow(im)
+        #imshow(im)
 
