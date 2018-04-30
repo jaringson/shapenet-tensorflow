@@ -1,20 +1,13 @@
 #!/usr/bin/env python
 import numpy as np 
 import tensorflow as tf
-import back_batch_utils
+import res_batch_utils
 import cut_backgrounds
 from scipy.misc import imsave
 import matplotlib.pyplot as plt
 
 tf.reset_default_graph()
 sess = tf.InteractiveSession()
-
-BATCH_SIZE = 100
-LAMBDA = 10 # Gradient penalty lambda hyperparameter
-
-g_scope = 0
-#d_scope = 0
-noise = 0
 
 def weight_variable(shape):
   initial = tf.truncated_normal(shape, stddev=0.2)
@@ -30,32 +23,6 @@ def max_pool_2x2(x):
 def LeakyReLU(x, alpha=0.2):
     return tf.maximum(alpha*x, x)
 
-def conv_t( x, filter_size=3, stride=1, num_filters=64, is_output=False,out_size=None, name="conv_t"):
-    with tf.variable_scope(name) as scope:
-    
-   
-        x_shape = x.get_shape().as_list()
-        W = tf.get_variable("W_conv_t", [filter_size, filter_size, num_filters,x_shape[3]], initializer = tf.contrib.layers.variance_scaling_initializer())
-        b = tf.get_variable("B_conv_t", [num_filters], initializer = tf.contrib.layers.variance_scaling_initializer())
-        
-        if out_size ==None:
-            outsize = x_shape
-            outsize[0] = BATCH_SIZE
-            outsize[1] *= 2
-            outsize[2] *= 2
-            outsize[3] = W.get_shape().as_list()[2]
-
-        h = []
-        
-
-        if not is_output:
-            h = tf.nn.relu(tf.nn.conv2d_transpose(x, W, output_shape=outsize, strides=[1, stride, stride, 1], padding="SAME") + b)        
-        
-        else:
-            h = tf.nn.conv2d_transpose(x, W, output_shape=outsize, strides=[1,stride,stride,1], padding='SAME') + b
-    
-
-        return h #result
 
 def conv( x, filter_size=3, stride=1, num_filters=64, is_output=False, name="conv"):
     with tf.variable_scope(name) as scope:
@@ -147,7 +114,7 @@ dist_t = tf.placeholder(tf.int32, shape=[None,360])
 
 keep_prob = tf.placeholder(tf.float32)
 
-x_img = tf.reshape(x, [-1,150,150,3])
+x_img = tf.reshape(x, [-1,50,50,3])
 
 c1 = conv(x_img,num_filters=12,stride=2,name='C1')
 print c1.get_shape()
@@ -193,7 +160,7 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-BASE_DIR = 't'
+BASE_DIR = 'a_back'
 
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
@@ -212,7 +179,7 @@ print("step, azimuth, elevation, tilt, loss")
 for i in range(max_steps):
     sigma_val = 1.0 #1.0/(1+i*0.001) 
     kp_in = 0.50
-    batch = back_batch_utils.next_batch(50)
+    batch = res_batch_utils.next_batch(50)
     '''print sess.run([
                 a_conv, loss_a ,loss
                 ],
@@ -232,18 +199,18 @@ for i in range(max_steps):
         saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
     
     if i%500 == 0:
-        test_batch = back_batch_utils.next_batch(50, testing=True)
+        test_batch = res_batch_utils.next_batch(50, testing=True)
         get_stats(sess, test_batch, test_writer, fig, testing=True)
-	cut_backgrounds.cut(10)   
+        cut_backgrounds.cut(10)   
  
     train_step.run(feed_dict={
                 x: batch[0],
                 a_: batch[1],
                 e_: batch[2],
                 t_: batch[3],
-		dist_a: batch[4],
-		dist_e: batch[5],
-		dist_t: batch[6],
+                dist_a: batch[4],
+                dist_e: batch[5],
+                dist_t: batch[6],
                 sigma_: sigma_val,
                 keep_prob: kp_in})
 
