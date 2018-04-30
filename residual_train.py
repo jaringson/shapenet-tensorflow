@@ -17,8 +17,13 @@ import cut_backgrounds
 
 import res_batch_utils
 
+<<<<<<< HEAD
 batch_size = 50
 xsize, ysize = 50, 50
+=======
+batch_size = 1 # 50
+xsize, ysize = 150, 150
+>>>>>>> 546a05aa3f7486037a4549608aba1d14d3fb6dab
 resnet_units = 3
 
 tf.reset_default_graph()
@@ -287,7 +292,11 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
+<<<<<<< HEAD
 BASE_DIR = 'k'
+=======
+BASE_DIR = 'not_crazy_2'
+>>>>>>> 546a05aa3f7486037a4549608aba1d14d3fb6dab
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
 test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
@@ -295,7 +304,11 @@ test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
 sess.run(tf.global_variables_initializer())
 
 saver = tf.train.Saver()
+<<<<<<< HEAD
 # saver.restore(sess, 'tf_logs/i/shapenet.ckpt')
+=======
+saver.restore(sess, 'tf_logs/not_crazy/shapenet.ckpt')
+>>>>>>> 546a05aa3f7486037a4549608aba1d14d3fb6dab
 
 max_steps = 100000
 
@@ -303,6 +316,10 @@ fig = plt.figure(0)
 print("step, azimuth, elevation, tilt, loss")
 
 for i in range(max_steps):
+    #if np.random.randint(2):
+    #    batch_size = np.random.randint(1,50) #20 # 50
+    #else: 
+    #batch_size = 1
     sigma_val = 1.0 #1.0/(1+i*0.001) 
     kp_in = 0.50
     batch = res_batch_utils.next_batch(batch_size)
