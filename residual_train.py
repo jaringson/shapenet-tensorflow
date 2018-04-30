@@ -18,7 +18,7 @@ import cut_backgrounds
 import res_batch_utils
 
 batch_size = 50
-xsize, ysize = 150, 150
+xsize, ysize = 50, 50
 resnet_units = 3
 
 tf.reset_default_graph()
@@ -71,7 +71,8 @@ def conv_2d(in_var, out_channels, filters=[3,3], strides=[1,1,1,1],
         b = tf.get_variable(name + "_b", [out_channels], initializer=tf.constant_initializer(0.0))
 
         conv = tf.nn.conv2d(in_var, W, strides=strides, padding=padding)
-        conv = tf.reshape(tf.nn.bias_add(conv, b), conv.get_shape())
+        #conv = tf.reshape(tf.nn.bias_add(conv, b), conv.get_shape())
+        conv = tf.nn.bias_add(conv, b)
 
         return conv
 
@@ -222,7 +223,7 @@ def get_stats(sess, batch, writer, fig, testing=False):
 
     from scipy.misc import imsave
     im = np.array(batch[0][0])
-    im = im.reshape([150,150,3])
+    im = im.reshape([xsize,ysize,3])
     imsave('./tf_logs/' +BASE_DIR+'/'+prefix+'_image.png',im)
 
 
@@ -240,7 +241,7 @@ def fc( x, out_size=50, is_output=False, name="fc" ):
         return h
 
 # Create model
-x = tf.placeholder(tf.float32, shape=[None,150*150*3])
+x = tf.placeholder(tf.float32, shape=[None,xsize*ysize*3])
 a_ = tf.placeholder(tf.float32, shape=[None, 1])
 e_ = tf.placeholder(tf.float32, shape=[None, 1])
 t_ = tf.placeholder(tf.float32, shape=[None, 1])
@@ -250,7 +251,7 @@ dist_e = tf.placeholder(tf.int32, shape=[None, 180])
 dist_t = tf.placeholder(tf.int32, shape=[None,360])
 
 
-x_r = tf.reshape(x, [batch_size, xsize, ysize, 3])
+x_r = tf.reshape(x, [-1, xsize, ysize, 3])
 is_training = tf.placeholder(tf.bool)
 
 with tf.variable_scope("residual") as scope:
@@ -286,7 +287,7 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-BASE_DIR = 'g'
+BASE_DIR = 'k'
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
 test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
@@ -294,7 +295,7 @@ test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
 sess.run(tf.global_variables_initializer())
 
 saver = tf.train.Saver()
-saver.restore(sess, 'tf_logs/e/shapenet.ckpt')
+# saver.restore(sess, 'tf_logs/i/shapenet.ckpt')
 
 max_steps = 100000
 
@@ -304,7 +305,7 @@ print("step, azimuth, elevation, tilt, loss")
 for i in range(max_steps):
     sigma_val = 1.0 #1.0/(1+i*0.001) 
     kp_in = 0.50
-    batch = res_batch_utils.next_batch(50)
+    batch = res_batch_utils.next_batch(batch_size)
     '''print(sess.run([
                 a_conv, loss_a ,loss
                 ],
@@ -324,7 +325,7 @@ for i in range(max_steps):
         saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
 
     if i%500 == 0:
-        test_batch = res_batch_utils.next_batch(50, testing=True)
+        test_batch = res_batch_utils.next_batch(batch_size, testing=True)
         get_stats(sess, test_batch, test_writer, fig, testing=True)
         cut_backgrounds.cut(10)
 
