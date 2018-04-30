@@ -249,7 +249,7 @@ t_ = tf.placeholder(tf.float32, shape=[None, 1])
 sigma_ = tf.placeholder(tf.float32)
 dist_a = tf.placeholder(tf.int32, shape=[None, 360])
 dist_e = tf.placeholder(tf.int32, shape=[None, 180])
-dist_t = tf.placeholder(tf.int32, shape=[None,360])
+dist_t = tf.placeholder(tf.int32, shape=[None, 360])
 
 
 x_r = tf.reshape(x, [-1, xsize, ysize, 3])
@@ -288,7 +288,7 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-BASE_DIR = 'k'
+BASE_DIR = 'n'
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
 test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
