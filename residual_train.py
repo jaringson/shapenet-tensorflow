@@ -17,7 +17,7 @@ import cut_backgrounds
 
 import res_batch_utils
 
-batch_size = 50
+batch_size = 1 # 50
 xsize, ysize = 150, 150
 resnet_units = 3
 
@@ -71,7 +71,8 @@ def conv_2d(in_var, out_channels, filters=[3,3], strides=[1,1,1,1],
         b = tf.get_variable(name + "_b", [out_channels], initializer=tf.constant_initializer(0.0))
 
         conv = tf.nn.conv2d(in_var, W, strides=strides, padding=padding)
-        conv = tf.reshape(tf.nn.bias_add(conv, b), conv.get_shape())
+        #conv = tf.reshape(tf.nn.bias_add(conv, b), conv.get_shape())
+        conv = tf.nn.bias_add(conv, b)
 
         return conv
 
@@ -250,7 +251,7 @@ dist_e = tf.placeholder(tf.int32, shape=[None, 180])
 dist_t = tf.placeholder(tf.int32, shape=[None,360])
 
 
-x_r = tf.reshape(x, [batch_size, xsize, ysize, 3])
+x_r = tf.reshape(x, [-1, xsize, ysize, 3])
 is_training = tf.placeholder(tf.bool)
 
 with tf.variable_scope("residual") as scope:
@@ -286,7 +287,7 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-BASE_DIR = 'g'
+BASE_DIR = 'not_crazy_2'
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
 test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
@@ -294,7 +295,7 @@ test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
 sess.run(tf.global_variables_initializer())
 
 saver = tf.train.Saver()
-saver.restore(sess, 'tf_logs/e/shapenet.ckpt')
+saver.restore(sess, 'tf_logs/not_crazy/shapenet.ckpt')
 
 max_steps = 100000
 
@@ -302,9 +303,13 @@ fig = plt.figure(0)
 print("step, azimuth, elevation, tilt, loss")
 
 for i in range(max_steps):
+    #if np.random.randint(2):
+    #    batch_size = np.random.randint(1,50) #20 # 50
+    #else: 
+    #batch_size = 1
     sigma_val = 1.0 #1.0/(1+i*0.001) 
     kp_in = 0.50
-    batch = res_batch_utils.next_batch(50)
+    batch = res_batch_utils.next_batch(batch_size)
     '''print(sess.run([
                 a_conv, loss_a ,loss
                 ],
@@ -324,7 +329,7 @@ for i in range(max_steps):
         saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
 
     if i%500 == 0:
-        test_batch = res_batch_utils.next_batch(50, testing=True)
+        test_batch = res_batch_utils.next_batch(batch_size, testing=True)
         get_stats(sess, test_batch, test_writer, fig, testing=True)
         cut_backgrounds.cut(10)
 
