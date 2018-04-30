@@ -99,7 +99,7 @@ def next_batch(batch, testing=False):
 		
 		img = Image.open(image)
 		img = img.rotate(extra_d)
-		upsize = np.random.randint(50,200)
+		upsize = np.random.randint(25,100)
 		img = img.resize((final_size+upsize,final_size+upsize))
 
 		pixelSize = np.random.randint(1,5)
@@ -109,7 +109,7 @@ def next_batch(batch, testing=False):
 		
 		#background = Image.open(np.random.choice(all_backgrounds))
 		rand_back = all_backgrounds[np.random.randint(len(all_backgrounds))]  
-		background = Image.open(rand_back)
+		background = Image.open(rand_back).resize((final_size,final_size))
 		#w, h = background.size
 		#x = np.random.randint(0, w-final_size-1)
 		#y = np.random.randint(0, h-final_size-1)
@@ -196,7 +196,7 @@ if __name__ == '__main__':
     #print b[3], b[6]
     for i in range(num):
         im = np.array(b[0][i])
-        im = im.reshape([150,150,3])
+        im = im.reshape([final_size,final_size,3])
         #imsave(str(i)+'.png', im)
-        #imshow(im)
+        imshow(im)
 
