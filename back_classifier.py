@@ -95,14 +95,14 @@ def get_stats(sess, batch, writer, fig, testing=False):
 
     from scipy.misc import imsave
     im = np.array(batch[0][0])
-    im = im.reshape([150,150,3])
+    im = im.reshape([50,50,3])
     imsave('./tf_logs/' +BASE_DIR+'/'+prefix+'_image.png',im)    
  
     print(prefix+": %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
     writer.add_summary(summary_str,i)
 
 # placeholders
-x = tf.placeholder(tf.float32, shape=[None,150*150*3])
+x = tf.placeholder(tf.float32, shape=[None,50*50*3])
 a_ = tf.placeholder(tf.float32, shape=[None, 1])
 e_ = tf.placeholder(tf.float32, shape=[None, 1])
 t_ = tf.placeholder(tf.float32, shape=[None, 1])
