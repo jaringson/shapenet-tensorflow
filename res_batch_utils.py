@@ -44,59 +44,62 @@ def next_batch(batch, testing=False):
 	while stay_err:
 	    while_i += 1
 	    try:
-		model_i = np.random.randint(len(all_models)-1)
-		image_i = np.random.randint(num_models-50)
-		if testing:
-		    model_i = np.random.randint(len(all_models)) 
-		    image_i = np.random.randint(num_models-50, 1000)
-		    if model_i == len(all_models) - 1:
-			image_i = np.random.randint(1000)
-
-		model = all_models[model_i]
-		image = model+'/'+str(image_i)+'.png'
-		#print image
-		#img = Image.open(image)
-
-		angles = all_views[model_i][image_i].split(' ')
 		
-		azim = np.radians(int(angles[0]))
-		ele = np.radians(int(angles[1]))
-		tilt = np.radians(int(angles[2]))	
+		while True: 
+			model_i = np.random.randint(len(all_models)-1)
+			image_i = np.random.randint(num_models-50)
+			if testing:
+			    model_i = np.random.randint(len(all_models)) 
+			    image_i = np.random.randint(num_models-50, 1000)
+			    if model_i == len(all_models) - 1:
+				image_i = np.random.randint(1000)
 
-		extra = np.radians(np.random.randint(-90,90))	
+			model = all_models[model_i]
+			image = model+'/'+str(image_i)+'.png'
+			#print image
+			#img = Image.open(image)
 
-		Rt = np.array([[1,0,0],
-			  [0,np.cos(-tilt),-np.sin(-tilt)],
-			  [0,np.sin(-tilt),np.cos(-tilt)]])
+			angles = all_views[model_i][image_i].split(' ')
+			
+			azim = np.radians(int(angles[0]))
+			ele = np.radians(int(angles[1]))
+			tilt = np.radians(int(angles[2]))	
 
-		Re = np.array([[np.cos(-ele),0,np.sin(-ele)],
-			  [0,1,0],
-			  [-np.sin(-ele),0,np.cos(-ele)]])
+			extra = np.radians(np.random.randint(-90,90))	
 
-		Ra = np.array([[np.cos(azim),-np.sin(azim),0],
-			  [np.sin(azim),np.cos(azim),0],
-			  [0,0,1]])
+			Rt = np.array([[1,0,0],
+				  [0,np.cos(-tilt),-np.sin(-tilt)],
+				  [0,np.sin(-tilt),np.cos(-tilt)]])
 
-		# rotates the plane to face you instead of away from you
-		Rrev = np.array([[-1,0,0], 
-			  [0,-1,0],
-			  [0,0,1]])
+			Re = np.array([[np.cos(-ele),0,np.sin(-ele)],
+				  [0,1,0],
+				  [-np.sin(-ele),0,np.cos(-ele)]])
 
-		Rextra = np.array([[1,0,0],
-			  [0,np.cos(-extra),-np.sin(-extra)],
-			  [0,np.sin(-extra),np.cos(-extra)]])
-		
-		R = Rextra.dot(Rrev).dot(Rt).dot(Re).dot(Ra)
+			Ra = np.array([[np.cos(azim),-np.sin(azim),0],
+				  [np.sin(azim),np.cos(azim),0],
+				  [0,0,1]])
 
-		pitch = -np.arcsin(R[2,0])
-		roll = np.arctan2(R[2,1],R[2,2])
-		yaw = np.arctan2(R[1,0],R[0,0])
+			# rotates the plane to face you instead of away from you
+			Rrev = np.array([[-1,0,0], 
+				  [0,-1,0],
+				  [0,0,1]])
 
-		yaw_d = int(np.degrees(yaw))
-		pitch_d = int(np.degrees(pitch))
-		roll_d = int(np.degrees(roll))
-		extra_d = int(np.degrees(extra))
-		
+			Rextra = np.array([[1,0,0],
+				  [0,np.cos(-extra),-np.sin(-extra)],
+				  [0,np.sin(-extra),np.cos(-extra)]])
+			
+			R = Rextra.dot(Rrev).dot(Rt).dot(Re).dot(Ra)
+
+			pitch = -np.arcsin(R[2,0])
+			roll = np.arctan2(R[2,1],R[2,2])
+			yaw = np.arctan2(R[1,0],R[0,0])
+			
+			yaw_d = int(np.degrees(yaw))
+			pitch_d = int(np.degrees(pitch))
+			roll_d = int(np.degrees(roll))
+			extra_d = int(np.degrees(extra))
+			if abs(pitch_d) < 45:
+				break	
 		img = Image.open(image)
 		img = img.rotate(extra_d)
 		upsize = np.random.randint(20,30)
