@@ -98,7 +98,7 @@ def next_batch(batch, testing=False):
 			pitch_d = int(np.degrees(pitch))
 			roll_d = int(np.degrees(roll))
 			extra_d = int(np.degrees(extra))
-			if abs(pitch_d) < 5 and abs(roll_d) < 90:
+			if abs(pitch_d) < 20 and abs(roll_d) < 90:
 				break	
 		img = Image.open(image)
 		img = img.rotate(extra_d)
