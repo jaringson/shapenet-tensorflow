@@ -59,7 +59,7 @@ def fc( x, out_size=50, is_output=False, name="fc" ):
 def get_stats(sess, batch, writer, fig, testing=False):
     prefix = 'Training'
     if testing:
-	prefix = 'Testing'
+        prefix = 'Testing'
     summary_str,ac,ec,tc,loss_r,a_c,e_c,t_c = sess.run([
                 merged_summary_op,
                 a_acc,e_acc,t_acc,loss,

@@ -99,7 +99,7 @@ def next_batch(batch, testing=False):
 		
 		img = Image.open(image)
 		img = img.rotate(extra_d)
-		upsize = np.random.randint(25,100)
+		upsize = np.random.randint(20,30)
 		img = img.resize((final_size+upsize,final_size+upsize))
 
 		# pixelSize = np.random.randint(1,5)
@@ -115,8 +115,8 @@ def next_batch(batch, testing=False):
 		#y = np.random.randint(0, h-final_size-1)
 
 		#background = background.crop((x, y, x+final_size, y+final_size))
-		background.paste(img, (background.size[0]/2-img.size[0]/2 + np.random.randint(-20,20), 
-				       background.size[1]/2-img.size[1]/2 + np.random.randint(-20,20)),img)
+		background.paste(img, (background.size[0]/2-img.size[0]/2 + np.random.randint(-1,1), 
+				       background.size[1]/2-img.size[1]/2 + np.random.randint(-1,1)),img)
 
 		#background.save('./test_background/'+str(i)+'.png')
 		#img = np.array(background.convert('L')).flatten() / 255.0
