@@ -85,19 +85,21 @@ keep_prob = tf.placeholder(tf.float32)
 x_image = tf.reshape(x, [-1,224,224,3])
 vgg = vgg16.vgg16( x_image, 'vgg16_weights.npz', sess )
 
-layers = [ 'conv5_1','conv5_2' ]
-ops = [ getattr( vgg, x ) for x in layers ]
+#layers = [ 'conv5_1','conv5_2' ]
+#ops = [ getattr( vgg, x ) for x in layers ]
 
-vgg_acts = sess.run( ops, feed_dict={vgg.imgs: x_image} )
+print(vgg.fc3l)
+print(vgg.fc3l.get_shape())
+#vgg_acts = sess.run( ops, feed_dict={vgg.imgs: x_image} )
 
 
-print(vgg_acts[1].get_shape())
-last = vgg_acts[1]
-shape = last.get_shape().as_list()
-f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
-f1 = fc(f_flat,out_size=1000,name='F1')
-print f1.get_shape()
-f2 = fc(f1,out_size=500,name='F2')
+#print(ops[1].get_shape())
+#last = ops[1]
+#shape = last.get_shape().as_list()
+#f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
+#f1 = fc(f_flat,out_size=1000,name='F1')
+#print f1.get_shape()
+f2 = fc(vgg.fc3l,out_size=500,name='F2')
 f2_drop = tf.nn.dropout(f2, keep_prob)
 
 a_conv = tf.nn.softmax(fc(f2_drop,out_size=360,is_output=True,name='az'))
@@ -106,7 +108,7 @@ t_conv = tf.nn.softmax(fc(f2_drop,out_size=360,is_output=True,name='ti'))
 
 
 sess.run( tf.global_variables_initializer())
-vgg.load_weights( 'vgg16_weights.npz', sess )
+#vgg.load_weights( 'vgg16_weights.npz', sess )
 
 
 with tf.name_scope('Cost'):
