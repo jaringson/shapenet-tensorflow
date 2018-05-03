@@ -50,7 +50,7 @@ def get_stats(sess, batch, writer, fig, testing=False):
 
     from scipy.misc import imsave
     im = np.array(batch[0][0])
-    im = im.reshape([50,50,3])
+    im = im.reshape([224,224,3])
     imsave('./tf_logs/' +BASE_DIR+'/'+prefix+'_image.png',im)    
  
     print(prefix+": %d,  %g "%(i, loss_r))
