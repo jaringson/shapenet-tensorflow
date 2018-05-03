@@ -5,15 +5,19 @@ import res_batch_utils
 import numpy as np
 import vgg16
 
+import cut_backgrounds
+from scipy.misc import imsave
+import matplotlib.pyplot as plt
+
 sess = tf.InteractiveSession()
 
 def get_stats(sess, batch, writer, fig, testing=False):
     prefix = 'Training'
     if testing:
         prefix = 'Testing'
-    summary_str,ac,ec,tc,loss_r,a_c,e_c,t_c = sess.run([
+    summary_str,loss_r,a_c,e_c,t_c = sess.run([
                 merged_summary_op,
-                a_acc,e_acc,t_acc,loss,
+                loss,
 		a_conv,e_conv,t_conv],
                 feed_dict={
                 x: batch[0],
@@ -49,7 +53,7 @@ def get_stats(sess, batch, writer, fig, testing=False):
     im = im.reshape([50,50,3])
     imsave('./tf_logs/' +BASE_DIR+'/'+prefix+'_image.png',im)    
  
-    print(prefix+": %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
+    print(prefix+": %d,  %g "%(i, loss_r))
     writer.add_summary(summary_str,i)
 
 def fc( x, out_size=50, is_output=False, name="fc" ):
@@ -84,8 +88,11 @@ vgg = vgg16.vgg16( x_image, 'vgg16_weights.npz', sess )
 layers = [ 'conv5_1','conv5_2' ]
 ops = [ getattr( vgg, x ) for x in layers ]
 
-print(ops[1].get_shape())
-last = ops[1]
+vgg_acts = sess.run( ops, feed_dict={vgg.imgs: x_image} )
+
+
+print(vgg_acts[1].get_shape())
+last = vgg_acts[1]
 shape = last.get_shape().as_list()
 f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
 f1 = fc(f_flat,out_size=1000,name='F1')
@@ -114,7 +121,7 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-BASE_DIR = 'a_back'
+BASE_DIR = 'a_vgg'
 
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
