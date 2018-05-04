@@ -132,9 +132,8 @@ train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.g
 test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
 
 sess.run(tf.global_variables_initializer())
+vgg.load_weights( 'vgg16_weights.npz', sess )
 
-#all_vars = [v for v in tf.global_variables()]
-#print(all_vars)
 
 
 saver = tf.train.Saver()
