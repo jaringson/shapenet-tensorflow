@@ -315,6 +315,8 @@ def main(_):
 	fig = plt.figure(0)
 	print("step, azimuth, elevation, tilt, loss")
 
+	prefix =''
+
 	for i in range(max_steps):
 		sigma_val = 1.0 #1.0/(1+i*0.001) 
 		kp_in = 0.50
@@ -330,12 +332,59 @@ def main(_):
 
 
 		if i%100 == 0:
-		    get_stats(sess, batch, train_writer, fig)
-		    saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
+		    # get_stats(sess, batch, train_writer, fig)
+		    prefix = 'Training'
+			summary_str,ac,ec,tc,loss_r,a_c,e_c,t_c = sess.run([
+			    merged_summary_op,
+			    a_acc,e_acc,t_acc,loss,
+			    a_conv,e_conv,t_conv],
+			    feed_dict={
+			    x: batch[0],
+			    a_: batch[1],
+			    e_: batch[2],
+			    t_: batch[3],
+			    dist_a: batch[4],
+			    dist_e: batch[5],
+			    dist_t: batch[6],
+			    sigma_: sigma_val})
+			print(prefix+": %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
+			writer.add_summary(summary_str,i)
 
 		if i%500 == 0:
 		    test_batch = res_batch_utils.next_batch(50, testing=True)
-		    get_stats(sess, test_batch, test_writer, fig, testing=True)
+		    # get_stats(sess, test_batch, test_writer, fig, testing=True)
+			prefix = 'Testing'
+			a_c,e_c,t_c = sess.run([
+			    a_conv,e_conv,t_conv],
+			    feed_dict={
+			    x: batch[0]})
+
+
+		if i%100  ==0 or i%500==0:
+			plt.clf()
+			plt.bar(range(-180,180),a_c[0,:],1)
+			plt.title(prefix+' Yaw: '+str(batch[1][0][0]*180/np.pi))
+			plt.pause(0.00001)
+			fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_azimuth.png')
+
+			plt.clf()
+			plt.bar(range(-90,90),e_c[0,:],1)
+			plt.title(prefix+' Pitch: '+str(batch[2][0][0]*180/np.pi))
+			plt.pause(0.00001)
+			fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_elevation.png')
+
+			plt.clf()
+			plt.bar(range(-180,180),t_c[0,:],1)
+			plt.title(prefix+' Roll: '+str(batch[3][0][0]*180/np.pi))
+			plt.pause(0.00001)
+			fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_tilt.png')
+
+
+			from scipy.misc import imsave
+			im = np.array(batch[0][0])
+			im = im.reshape([xsize,ysize,3])
+			imsave('./tf_logs/' +BASE_DIR+'/'+prefix+'_image.png',im)
+
 		    cut_backgrounds.cut(10)   
 
 		train_step.run(feed_dict={
