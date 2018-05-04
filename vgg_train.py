@@ -88,17 +88,17 @@ vgg = vgg16.vgg16( x_image, 'vgg16_weights.npz', sess )
 #layers = [ 'conv5_1','conv5_2' ]
 #ops = [ getattr( vgg, x ) for x in layers ]
 
-print(vgg.fc3l)
-print(vgg.fc3l.get_shape())
+print(vgg.conv5_3)
+print(vgg.conv5_3.get_shape())
 #vgg_acts = sess.run( ops, feed_dict={vgg.imgs: x_image} )
 
 
 #print(ops[1].get_shape())
-#last = ops[1]
-#shape = last.get_shape().as_list()
-#f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
-#f1 = fc(f_flat,out_size=1000,name='F1')
-#print f1.get_shape()
+last = vgg.conv5_3
+shape = last.get_shape().as_list()
+f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
+f1 = fc(f_flat,out_size=1000,name='F1')
+print f1.get_shape()
 f2 = fc(vgg.fc3l,out_size=500,name='F2')
 f2_drop = tf.nn.dropout(f2, keep_prob)
 
@@ -117,7 +117,7 @@ with tf.name_scope('Cost'):
     loss_t = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_t, tf.float32)/sigma_) * tf.log(tf.clip_by_value(t_conv,1e-10,1.0)), axis=1)) 
     loss = loss_a+loss_e+loss_t 
 with tf.name_scope('Optimizer'):
-    train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
+    train_step = tf.train.AdamOptimizer(1e-4).minimize(loss, var_list=[fa,f2,a_conv,e_conv.t_conv])
 
 loss_summary = tf.summary.scalar( 'loss', loss )
 
