@@ -117,7 +117,7 @@ with tf.name_scope('Cost'):
     loss_t = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_t, tf.float32)/sigma_) * tf.log(tf.clip_by_value(t_conv,1e-10,1.0)), axis=1)) 
     loss = loss_a+loss_e+loss_t 
 with tf.name_scope('Optimizer'):
-    train_step = tf.train.AdamOptimizer(1e-4).minimize(loss, var_list=[fa,f2,a_conv,e_conv.t_conv])
+    train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
 
 loss_summary = tf.summary.scalar( 'loss', loss )
 
