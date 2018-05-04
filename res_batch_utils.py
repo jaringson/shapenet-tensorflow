@@ -123,11 +123,11 @@ def next_batch(batch, testing=False):
 				       background.size[1]/2-img.size[1]/2 + np.random.randint(-3,3)),img)
 		temp = Image.new('RGB',(vgg_final,vgg_final))
 
-		for i in range(4):
-			for j in range(4):
-				temp.paste(background, (50*i,50*j))
-		background = temp
-
+		#for i in range(4):
+		#	for j in range(4):
+		#		temp.paste(background, (50*i,50*j))
+		#background = temp
+		background = background.resize((vgg_final,vgg_final))
 		#background.save('./test_background/'+str(i)+'.png')
 		#img = np.array(background.convert('L')).flatten() / 255.0
 		

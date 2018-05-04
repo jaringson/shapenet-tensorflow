@@ -99,8 +99,8 @@ shape = last.get_shape().as_list()
 f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
 f1 = fc(f_flat,out_size=1000,name='F1')
 print f1.get_shape()
-f2 = fc(vgg.fc3l,out_size=500,name='F2')
-f2_drop = tf.nn.dropout(f2, keep_prob)
+f2 = fc(f1,out_size=500,name='F2')
+f2_drop = f2 #tf.nn.dropout(f2, keep_prob)
 
 a_conv = tf.nn.softmax(fc(f2_drop,out_size=360,is_output=True,name='az'))
 e_conv = tf.nn.softmax(fc(f2_drop,out_size=180,is_output=True,name='el'))
@@ -116,8 +116,10 @@ with tf.name_scope('Cost'):
     loss_e = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_e, tf.float32)/sigma_) * tf.log(tf.clip_by_value(e_conv,1e-10,1.0)), axis=1))
     loss_t = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_t, tf.float32)/sigma_) * tf.log(tf.clip_by_value(t_conv,1e-10,1.0)), axis=1)) 
     loss = loss_a+loss_e+loss_t 
+train_vars = [v for v in tf.global_variables() if v.name == 'F2/W_fc:0' or v.name=='F1/B_fc:0' or v.name=='F2/W_fc:0' or v.name=='F2/B_fc:0' or v.name=='az/W_fc:0' or v.name=='az/B_fc:0' or v.name=='el/W_fc:0' or v.name=='el/B_fc:0' or v.name=='ti/W_fc:0' or v.name=='ti/B_fc:0']
+print(train_vars)
 with tf.name_scope('Optimizer'):
-    train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
+    train_step = tf.train.AdamOptimizer(1e-4).minimize(loss,var_list=train_vars)
 
 loss_summary = tf.summary.scalar( 'loss', loss )
 
@@ -131,6 +133,10 @@ test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
 
 sess.run(tf.global_variables_initializer())
 
+#all_vars = [v for v in tf.global_variables()]
+#print(all_vars)
+
+
 saver = tf.train.Saver()
 #saver.restore(sess, 'tf_logs/q/shapenet.ckpt')
 
@@ -143,20 +149,6 @@ for i in range(max_steps):
     sigma_val = 1.0 #1.0/(1+i*0.001) 
     kp_in = 0.50
     batch = res_batch_utils.next_batch(50)
-    '''print sess.run([
-                a_conv, loss_a ,loss
-                ],
-                feed_dict={
-                x: batch[0],
-                a_: batch[1],
-                e_: batch[2],
-                t_: batch[3],
-		dist_a: batch[4],
-		dist_e: batch[5],
-		dist_t: batch[6],
-                sigma_: sigma_val,
-                keep_prob: kp_in})
-    '''
     if i%100 == 0:
         get_stats(sess, batch, train_writer, fig)
         saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
