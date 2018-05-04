@@ -161,6 +161,59 @@ def fc( x, out_size=50, is_output=False, name="fc" ):
             h = tf.matmul(x,W)+b
         return h
 
+def get_stats(sess, batch, writer, fig, testing=False):
+    prefix = 'Training'
+    if testing:
+        prefix = 'Testing'
+        a_c,e_c,t_c = sess.run([
+                a_conv,e_conv,t_conv],
+                feed_dict={
+                x: batch[0],
+		is_training:True})
+    else:
+        summary_str,ac,ec,tc,loss_r,a_c,e_c,t_c = sess.run([
+                merged_summary_op,
+                a_acc,e_acc,t_acc,loss,
+                a_conv,e_conv,t_conv],
+                feed_dict={
+                x: batch[0],
+                a_: batch[1],
+                e_: batch[2],
+                t_: batch[3],
+                dist_a: batch[4],
+                dist_e: batch[5],
+                dist_t: batch[6],
+                sigma_: sigma_val,
+		is_training:True})
+        print(prefix+": %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
+        writer.add_summary(summary_str,i)
+
+    plt.clf()
+    plt.bar(range(-180,180),a_c[0,:],1)
+    plt.title(prefix+' Yaw: '+str(batch[1][0][0]*180/np.pi))
+    plt.pause(0.00001)
+    fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_azimuth.png')
+
+    plt.clf()
+    plt.bar(range(-90,90),e_c[0,:],1)
+    plt.title(prefix+' Pitch: '+str(batch[2][0][0]*180/np.pi))
+    plt.pause(0.00001)
+    fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_elevation.png')
+
+    plt.clf()
+    plt.bar(range(-180,180),t_c[0,:],1)
+    plt.title(prefix+' Roll: '+str(batch[3][0][0]*180/np.pi))
+    plt.pause(0.00001)
+    fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_tilt.png')
+
+
+    from scipy.misc import imsave
+    im = np.array(batch[0][0])
+    im = im.reshape([xsize,ysize,3])
+    imsave('./tf_logs/' +BASE_DIR+'/'+prefix+'_image.png',im)
+
+
+
 def main(_):
 	# Needed to make sure the logging output is visible.
 	# See https://github.com/tensorflow/tensorflow/issues/3047
@@ -248,14 +301,7 @@ def main(_):
 		sigma_val = 1.0 #1.0/(1+i*0.001) 
 		kp_in = 0.50
 		batch = res_batch_utils.next_batch(50)
-		# if i%100 == 0:
-		#     get_stats(sess, batch, train_writer, fig)
-		#     saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
-
-		# if i%500 == 0:
-		#     test_batch = res_batch_utils.next_batch(50, testing=True)
-		#     get_stats(sess, test_batch, test_writer, fig, testing=True)
-		#     cut_backgrounds.cut(10)   
+		
 
 		all_outputs = []
 		for bat in batch[0]:
@@ -263,6 +309,16 @@ def main(_):
                                  {resized_input_tensor: np.array(bat).reshape((1,299,299,3))})
 			bottleneck_values = np.squeeze(bottleneck_values)
 			all_outputs.append(bottleneck_values)
+
+
+		if i%100 == 0:
+		    get_stats(sess, batch, train_writer, fig)
+		    saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
+
+		if i%500 == 0:
+		    test_batch = res_batch_utils.next_batch(50, testing=True)
+		    get_stats(sess, test_batch, test_writer, fig, testing=True)
+		    cut_backgrounds.cut(10)   
 
 		train_step.run(feed_dict={
 					bottleneck_input: all_outputs,
