@@ -8,7 +8,7 @@ import numpy as np
 from scipy.misc import imread, imresize, imsave, imshow
 
 
-final_size = 50
+final_size = 224
 vgg_final = 224
 
 models = './models_airplanes/cub_cessna'
@@ -121,13 +121,14 @@ def next_batch(batch, testing=False):
 		#background = background.crop((x, y, x+final_size, y+final_size))
 		background.paste(img, (background.size[0]/2-img.size[0]/2 + np.random.randint(-3,3), 
 				       background.size[1]/2-img.size[1]/2 + np.random.randint(-3,3)),img)
-		temp = Image.new('RGB',(vgg_final,vgg_final))
+		
+		#temp = Image.new('RGB',(vgg_final,vgg_final))
 
 		#for i in range(4):
 		#	for j in range(4):
 		#		temp.paste(background, (50*i,50*j))
 		#background = temp
-		background = background.resize((vgg_final,vgg_final))
+		#background = background.resize((vgg_final,vgg_final))
 		#background.save('./test_background/'+str(i)+'.png')
 		#img = np.array(background.convert('L')).flatten() / 255.0
 		
