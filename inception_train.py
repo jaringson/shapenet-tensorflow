@@ -34,7 +34,7 @@ def create_model_graph(model_info):
 	manipulating.
 	"""
 	with tf.Graph().as_default() as graph:
-	model_path = os.path.join(FLAGS.model_dir, model_info['model_file_name'])
+		model_path = os.path.join(FLAGS.model_dir, model_info['model_file_name'])
 	with gfile.FastGFile(model_path, 'rb') as f:
 		graph_def = tf.GraphDef()
 		graph_def.ParseFromString(f.read())
@@ -56,7 +56,7 @@ def create_model_graph(model_info):
 		manipulating.
 	"""
 	with tf.Graph().as_default() as graph:
-	model_path = os.path.join(FLAGS.model_dir, model_info['model_file_name'])
+		model_path = os.path.join(FLAGS.model_dir, model_info['model_file_name'])
 	with gfile.FastGFile(model_path, 'rb') as f:
 		graph_def = tf.GraphDef()
 		graph_def.ParseFromString(f.read())
@@ -96,69 +96,6 @@ def maybe_download_and_extract(data_url):
 	                'bytes.')
 	tarfile.open(filepath, 'r:gz').extractall(dest_directory)
 
-
-def add_final_training_ops(class_count, final_tensor_name, bottleneck_tensor,
-	                       bottleneck_tensor_size):
-	"""Adds a new softmax and fully-connected layer for training.
-	We need to retrain the top layer to identify our new classes, so this function
-	adds the right operations to the graph, along with some variables to hold the
-	weights, and then sets up all the gradients for the backward pass.
-	The set up for the softmax and fully-connected layers is based on:
-	https://www.tensorflow.org/versions/master/tutorials/mnist/beginners/index.html
-	Args:
-		class_count: Integer of how many categories of things we're trying to
-		recognize.
-		final_tensor_name: Name string for the new final node that produces results.
-		bottleneck_tensor: The output of the main CNN graph.
-		bottleneck_tensor_size: How many entries in the bottleneck vector.
-	Returns:
-		The tensors for the training and cross entropy results, and tensors for the
-	bottleneck input and ground truth input.
-	"""
-	with tf.name_scope('input'):
-	bottleneck_input = tf.placeholder_with_default(
-	    bottleneck_tensor,
-	    shape=[None, bottleneck_tensor_size],
-	    name='BottleneckInputPlaceholder')
-
-	ground_truth_input = tf.placeholder(tf.float32,
-	                                    [None, class_count],
-	                                    name='GroundTruthInput')
-
-	# Organizing the following ops as `final_training_ops` so they're easier
-	# to see in TensorBoard
-	layer_name = 'final_training_ops'
-	with tf.name_scope(layer_name):
-	with tf.name_scope('weights'):
-		initial_value = tf.truncated_normal(
-	      [bottleneck_tensor_size, class_count], stddev=0.001)
-
-		layer_weights = tf.Variable(initial_value, name='final_weights')
-
-	  variable_summaries(layer_weights)
-	with tf.name_scope('biases'):
-	  layer_biases = tf.Variable(tf.zeros([class_count]), name='final_biases')
-	  variable_summaries(layer_biases)
-	with tf.name_scope('Wx_plus_b'):
-	  logits = tf.matmul(bottleneck_input, layer_weights) + layer_biases
-	  tf.summary.histogram('pre_activations', logits)
-
-	final_tensor = tf.nn.softmax(logits, name=final_tensor_name)
-	tf.summary.histogram('activations', final_tensor)
-
-	with tf.name_scope('cross_entropy'):
-	cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-	    labels=ground_truth_input, logits=logits)
-	with tf.name_scope('total'):
-	  cross_entropy_mean = tf.reduce_mean(cross_entropy)
-	tf.summary.scalar('cross_entropy', cross_entropy_mean)
-
-	with tf.name_scope('train'):
-	optimizer = tf.train.GradientDescentOptimizer(FLAGS.learning_rate)
-	train_step = optimizer.minimize(cross_entropy_mean)
-
-	return (train_step, cross_entropy_mean, bottleneck_input, ground_truth_input,
-	      final_tensor)
 
 def create_model_info(architecture):
 	"""Given the name of a model architecture, returns information about it.
@@ -239,7 +176,7 @@ def main(_):
 	shape = last.get_shape().as_list()
 	f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
 	f1 = fc(f_flat,out_size=1000,name='F1')
-	print f1.get_shape()
+	print(f1.get_shape())
 	f2 = fc(f1,out_size=500,name='F2')
 	f2_drop = f2 #tf.nn.dropout(f2, keep_prob)
 
