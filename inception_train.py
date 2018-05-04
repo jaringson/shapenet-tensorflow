@@ -32,6 +32,26 @@ import matplotlib.pyplot as plt
 tf.reset_default_graph()
 sess = tf.InteractiveSession()
 
+merged_summary_op = ''
+a_acc = ''
+e_acc = ''
+t_acc = ''
+loss = ''
+a_conv = ''
+e_conv = ''
+t_conv = ''
+x = ''
+a_= ''
+e_=''
+t_=''
+dist_a=''
+dist_e=''
+dist_t=''
+sigma_=''
+sigma_val=''
+is_training=''
+BASE_DIR = ''
+
 def create_model_graph(model_info):
 	""""Creates a graph from saved GraphDef file and returns a Graph object.
 	Args:
@@ -168,8 +188,7 @@ def get_stats(sess, batch, writer, fig, testing=False):
         a_c,e_c,t_c = sess.run([
                 a_conv,e_conv,t_conv],
                 feed_dict={
-                x: batch[0],
-		is_training:True})
+                x: batch[0]})
     else:
         summary_str,ac,ec,tc,loss_r,a_c,e_c,t_c = sess.run([
                 merged_summary_op,
@@ -183,8 +202,7 @@ def get_stats(sess, batch, writer, fig, testing=False):
                 dist_a: batch[4],
                 dist_e: batch[5],
                 dist_t: batch[6],
-                sigma_: sigma_val,
-		is_training:True})
+                sigma_: sigma_val})
         print(prefix+": %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
         writer.add_summary(summary_str,i)
 
