@@ -274,7 +274,7 @@ def main(_):
 		            dist_t: batch[6],
 		            sigma_: sigma_val,
 		            keep_prob: kp_in})
-		break
+		
 	saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
 	train_writer.close()
 	test_writer.close()
@@ -392,7 +392,7 @@ if __name__ == '__main__':
 	parser.add_argument(
 	  '--model_dir',
 	  type=str,
-	  default='/tmp/imagenet',
+	  default='./tf_logs/imagenet',
 	  help="""\
 	  Path to classify_image_graph_def.pb,
 	  imagenet_synset_to_human_label_map.txt, and
