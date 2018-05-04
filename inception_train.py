@@ -22,8 +22,15 @@ from tensorflow.python.platform import gfile
 from tensorflow.python.util import compat
 
 import cut_backgrounds
+import res_batch_utils
+
 from scipy.misc import imsave
 import matplotlib.pyplot as plt
+
+
+
+tf.reset_default_graph()
+sess = tf.InteractiveSession()
 
 def create_model_graph(model_info):
 	""""Creates a graph from saved GraphDef file and returns a Graph object.
@@ -141,25 +148,37 @@ def create_model_info(architecture):
 	  'input_std': input_std,
 	}
 
+def fc( x, out_size=50, is_output=False, name="fc" ):
+    with tf.variable_scope(name) as scope:
+        shape = x.get_shape().as_list()
+        W = tf.get_variable("W_fc", [shape[1], out_size], initializer=tf.contrib.layers.variance_scaling_initializer())
+        b = tf.get_variable("B_fc", [out_size], initializer=tf.contrib.layers.variance_scaling_initializer())
+        
+        h = []
+        if not is_output:
+            h = tf.nn.relu(tf.matmul(x,W)+b)
+        else:
+            h = tf.matmul(x,W)+b
+        return h
+
 def main(_):
 	# Needed to make sure the logging output is visible.
 	# See https://github.com/tensorflow/tensorflow/issues/3047
-	tf.logging.set_verbosity(tf.logging.INFO)
+	# tf.logging.set_verbosity(tf.logging.INFO)
 
 
 	# Gather information about the model architecture we'll be using.
 	model_info = create_model_info(FLAGS.architecture)
 	if not model_info:
 		tf.logging.error('Did not recognize architecture flag')
-	return -1
+		return -1
 
 	# Set up the pre-trained graph.
 	maybe_download_and_extract(model_info['data_url'])
-	graph, bottleneck_tensor, resized_image_tensor = (
+	graph, bottleneck_tensor, resized_input_tensor = (
 	  create_model_graph(model_info))
 
 	# placeholders
-	x = tf.placeholder(tf.float32, shape=[None, 224*224*3], name="images")
 	a_ = tf.placeholder(tf.float32, shape=[None, 1])
 	e_ = tf.placeholder(tf.float32, shape=[None, 1])
 	t_ = tf.placeholder(tf.float32, shape=[None, 1])
@@ -167,16 +186,16 @@ def main(_):
 	dist_a = tf.placeholder(tf.int32, shape=[None, 360])
 	dist_e = tf.placeholder(tf.int32, shape=[None, 180])
 	dist_t = tf.placeholder(tf.int32, shape=[None,360])
+	keep_prob = tf.placeholder(tf.float32)
 
-	print(bottleneck_tensor)
-	print(bottleneck_tensor.get_shape())
+	bottleneck_input = tf.placeholder(tf.float32, shape=[None, 2048])
 
 	#print(ops[1].get_shape())
-	last = vgg.conv5_3
-	shape = last.get_shape().as_list()
-	f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
-	f1 = fc(f_flat,out_size=1000,name='F1')
-	print(f1.get_shape())
+	last = bottleneck_input
+	# shape = last.get_shape().as_list()
+	# f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
+	f1 = fc(last,out_size=1000,name='F1')
+	# print(f1.get_shape())
 	f2 = fc(f1,out_size=500,name='F2')
 	f2_drop = f2 #tf.nn.dropout(f2, keep_prob)
 
@@ -186,7 +205,6 @@ def main(_):
 
 
 	sess.run( tf.global_variables_initializer())
-	#vgg.load_weights( 'vgg16_weights.npz', sess )
 
 
 	with tf.name_scope('Cost'):
@@ -194,8 +212,13 @@ def main(_):
 	    loss_e = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_e, tf.float32)/sigma_) * tf.log(tf.clip_by_value(e_conv,1e-10,1.0)), axis=1))
 	    loss_t = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_t, tf.float32)/sigma_) * tf.log(tf.clip_by_value(t_conv,1e-10,1.0)), axis=1)) 
 	    loss = loss_a+loss_e+loss_t 
-	train_vars = [v for v in tf.global_variables() if v.name == 'F2/W_fc:0' or v.name=='F1/B_fc:0' or v.name=='F2/W_fc:0' or v.name=='F2/B_fc:0' or v.name=='az/W_fc:0' or v.name=='az/B_fc:0' or v.name=='el/W_fc:0' or v.name=='el/B_fc:0' or v.name=='ti/W_fc:0' or v.name=='ti/B_fc:0']
-	print(train_vars)
+	train_vars = [v for v in tf.global_variables() if v.name == 'F2/W_fc:0' \
+					or v.name=='F1/B_fc:0' or v.name=='F2/W_fc:0' \
+					or v.name=='F2/B_fc:0' or v.name=='az/W_fc:0' \
+					or v.name=='az/B_fc:0' or v.name=='el/W_fc:0' \
+					or v.name=='el/B_fc:0' or v.name=='ti/W_fc:0' \
+					or v.name=='ti/B_fc:0']
+	# print(train_vars)
 	with tf.name_scope('Optimizer'):
 	    train_step = tf.train.AdamOptimizer(1e-4).minimize(loss,var_list=train_vars)
 
@@ -210,7 +233,6 @@ def main(_):
 	test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
 
 	sess.run(tf.global_variables_initializer())
-	vgg.load_weights( 'vgg16_weights.npz', sess )
 
 
 
@@ -226,17 +248,24 @@ def main(_):
 		sigma_val = 1.0 #1.0/(1+i*0.001) 
 		kp_in = 0.50
 		batch = res_batch_utils.next_batch(50)
-		if i%100 == 0:
-		    get_stats(sess, batch, train_writer, fig)
-		    saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
+		# if i%100 == 0:
+		#     get_stats(sess, batch, train_writer, fig)
+		#     saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
 
-		if i%500 == 0:
-		    test_batch = res_batch_utils.next_batch(50, testing=True)
-		    get_stats(sess, test_batch, test_writer, fig, testing=True)
-		    cut_backgrounds.cut(10)   
+		# if i%500 == 0:
+		#     test_batch = res_batch_utils.next_batch(50, testing=True)
+		#     get_stats(sess, test_batch, test_writer, fig, testing=True)
+		#     cut_backgrounds.cut(10)   
+
+		all_outputs = []
+		for bat in batch[0]:
+			bottleneck_values = sess.run(bottleneck_tensor,
+                                 {resized_input_tensor: np.array(bat).reshape((1,299,299,3))})
+			bottleneck_values = np.squeeze(bottleneck_values)
+			all_outputs.append(bottleneck_values)
 
 		train_step.run(feed_dict={
-		            x: batch[0],
+					bottleneck_input: all_outputs,
 		            a_: batch[1],
 		            e_: batch[2],
 		            t_: batch[3],
@@ -245,7 +274,7 @@ def main(_):
 		            dist_t: batch[6],
 		            sigma_: sigma_val,
 		            keep_prob: kp_in})
-
+		break
 	saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
 	train_writer.close()
 	test_writer.close()

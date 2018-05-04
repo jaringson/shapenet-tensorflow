@@ -8,7 +8,7 @@ import numpy as np
 from scipy.misc import imread, imresize, imsave, imshow
 
 
-final_size = 50
+final_size = 299
 
 models = './models_airplanes/cub_cessna'
 #models = './training_150'
