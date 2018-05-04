@@ -100,7 +100,7 @@ f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
 f1 = fc(f_flat,out_size=1000,name='F1')
 print f1.get_shape()
 f2 = fc(f1,out_size=500,name='F2')
-f2_drop = f2 #tf.nn.dropout(f2, keep_prob)
+f2_drop = tf.nn.dropout(f2, keep_prob)
 
 a_conv = tf.nn.softmax(fc(f2_drop,out_size=360,is_output=True,name='az'))
 e_conv = tf.nn.softmax(fc(f2_drop,out_size=180,is_output=True,name='el'))
@@ -125,7 +125,7 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-BASE_DIR = 'a_vgg'
+BASE_DIR = 'e_vgg'
 
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
