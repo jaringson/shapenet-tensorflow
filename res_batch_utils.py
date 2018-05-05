@@ -8,7 +8,8 @@ import numpy as np
 from scipy.misc import imread, imresize, imsave, imshow
 
 
-final_size = 299
+final_size = 224
+vgg_final = 224
 
 models = './models_airplanes/cub_cessna'
 #models = './training_150'
@@ -98,7 +99,7 @@ def next_batch(batch, testing=False):
 			pitch_d = int(np.degrees(pitch))
 			roll_d = int(np.degrees(roll))
 			extra_d = int(np.degrees(extra))
-			if abs(pitch_d) < 20 and abs(roll_d) < 90:
+			if abs(pitch_d) < 45 and abs(roll_d) < 90:
 				break	
 		img = Image.open(image)
 		img = img.rotate(extra_d)
@@ -118,9 +119,16 @@ def next_batch(batch, testing=False):
 		#y = np.random.randint(0, h-final_size-1)
 
 		#background = background.crop((x, y, x+final_size, y+final_size))
-		background.paste(img, (background.size[0]/2-img.size[0]/2 + np.random.randint(-1,1), 
-				       background.size[1]/2-img.size[1]/2 + np.random.randint(-1,1)),img)
+		background.paste(img, (background.size[0]/2-img.size[0]/2 + np.random.randint(-3,3), 
+				       background.size[1]/2-img.size[1]/2 + np.random.randint(-3,3)),img)
+		
+		#temp = Image.new('RGB',(vgg_final,vgg_final))
 
+		#for i in range(4):
+		#	for j in range(4):
+		#		temp.paste(background, (50*i,50*j))
+		#background = temp
+		#background = background.resize((vgg_final,vgg_final))
 		#background.save('./test_background/'+str(i)+'.png')
 		#img = np.array(background.convert('L')).flatten() / 255.0
 		
@@ -134,8 +142,8 @@ def next_batch(batch, testing=False):
                     var = np.random.randint(0,200)
                     #print(var)
                     sigma = var**0.5
-                    gauss = np.random.normal(mean,sigma,(final_size,final_size,3))
-                    gauss = gauss.reshape(final_size,final_size,3)
+                    gauss = np.random.normal(mean,sigma,(vgg_final,vgg_final,3))
+                    gauss = gauss.reshape(vgg_final,vgg_final,3)
                     noise_img = np.array(background) + gauss
                 
                     img = noise_img.flatten() / 255.0
@@ -162,6 +170,7 @@ def next_batch(batch, testing=False):
 		    roll_dist = np.concatenate(( np.arange(180+roll_d,0,-1), np.arange(0,180), np.arange(180, 180+roll_d, -1) ))	
 		else:
 		    roll_dist = np.concatenate(( np.arange(180-roll_d,180), np.arange(180,0,-1), np.arange(0,180-roll_d) ))
+
 
 		output[0].append(img.tolist())
 		output[1].append([yaw])
@@ -199,7 +208,6 @@ if __name__ == '__main__':
     #print b[3], b[6]
     for i in range(num):
         im = np.array(b[0][i])
-        im = im.reshape([final_size,final_size,3])
+        im = im.reshape([vgg_final,vgg_final,3])
         #imsave(str(i)+'.png', im)
         imshow(im)
-
