@@ -32,25 +32,6 @@ import matplotlib.pyplot as plt
 tf.reset_default_graph()
 sess = tf.InteractiveSession()
 
-merged_summary_op = ''
-a_acc = ''
-e_acc = ''
-t_acc = ''
-loss = ''
-a_conv = ''
-e_conv = ''
-t_conv = ''
-x = ''
-a_= ''
-e_=''
-t_=''
-dist_a=''
-dist_e=''
-dist_t=''
-sigma_=''
-sigma_val=''
-is_training=''
-BASE_DIR = ''
 
 def create_model_graph(model_info):
 	""""Creates a graph from saved GraphDef file and returns a Graph object.
@@ -181,54 +162,6 @@ def fc( x, out_size=50, is_output=False, name="fc" ):
             h = tf.matmul(x,W)+b
         return h
 
-def get_stats(sess, batch, writer, fig, testing=False):
-    prefix = 'Training'
-    if testing:
-        prefix = 'Testing'
-        a_c,e_c,t_c = sess.run([
-                a_conv,e_conv,t_conv],
-                feed_dict={
-                x: batch[0]})
-    else:
-        summary_str,ac,ec,tc,loss_r,a_c,e_c,t_c = sess.run([
-                merged_summary_op,
-                a_acc,e_acc,t_acc,loss,
-                a_conv,e_conv,t_conv],
-                feed_dict={
-                x: batch[0],
-                a_: batch[1],
-                e_: batch[2],
-                t_: batch[3],
-                dist_a: batch[4],
-                dist_e: batch[5],
-                dist_t: batch[6],
-                sigma_: sigma_val})
-        print(prefix+": %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
-        writer.add_summary(summary_str,i)
-
-    plt.clf()
-    plt.bar(range(-180,180),a_c[0,:],1)
-    plt.title(prefix+' Yaw: '+str(batch[1][0][0]*180/np.pi))
-    plt.pause(0.00001)
-    fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_azimuth.png')
-
-    plt.clf()
-    plt.bar(range(-90,90),e_c[0,:],1)
-    plt.title(prefix+' Pitch: '+str(batch[2][0][0]*180/np.pi))
-    plt.pause(0.00001)
-    fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_elevation.png')
-
-    plt.clf()
-    plt.bar(range(-180,180),t_c[0,:],1)
-    plt.title(prefix+' Roll: '+str(batch[3][0][0]*180/np.pi))
-    plt.pause(0.00001)
-    fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_tilt.png')
-
-
-    from scipy.misc import imsave
-    im = np.array(batch[0][0])
-    im = im.reshape([xsize,ysize,3])
-    imsave('./tf_logs/' +BASE_DIR+'/'+prefix+'_image.png',im)
 
 
 
@@ -297,11 +230,10 @@ def main(_):
 
 	merged_summary_op = tf.summary.merge_all()
 
-	BASE_DIR = 'a_inception'
+	BASE_DIR = 'b_inception'
 
 
 	train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
-	test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
 
 	sess.run(tf.global_variables_initializer())
 
@@ -332,14 +264,13 @@ def main(_):
 
 
 		if i%100 == 0:
-		    # get_stats(sess, batch, train_writer, fig)
 		    prefix = 'Training'
-			summary_str,ac,ec,tc,loss_r,a_c,e_c,t_c = sess.run([
+		    summary_str,loss_r,a_c,e_c,t_c = sess.run([
 			    merged_summary_op,
-			    a_acc,e_acc,t_acc,loss,
+			    loss,
 			    a_conv,e_conv,t_conv],
 			    feed_dict={
-			    x: batch[0],
+			    bottleneck_input: all_outputs,
 			    a_: batch[1],
 			    e_: batch[2],
 			    t_: batch[3],
@@ -347,17 +278,18 @@ def main(_):
 			    dist_e: batch[5],
 			    dist_t: batch[6],
 			    sigma_: sigma_val})
-			print(prefix+": %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
-			writer.add_summary(summary_str,i)
+		    print(prefix+": %d, %g "%(i, loss_r))
+		    train_writer.add_summary(summary_str,i)
+                    saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
 
 		if i%500 == 0:
 		    test_batch = res_batch_utils.next_batch(50, testing=True)
-		    # get_stats(sess, test_batch, test_writer, fig, testing=True)
-			prefix = 'Testing'
-			a_c,e_c,t_c = sess.run([
+		    prefix = 'Testing'
+		    a_c,e_c,t_c = sess.run([
 			    a_conv,e_conv,t_conv],
 			    feed_dict={
-			    x: batch[0]})
+			    bottleneck_input: all_outputs})
+		    cut_backgrounds.cut(10)   
 
 
 		if i%100  ==0 or i%500==0:
@@ -380,12 +312,10 @@ def main(_):
 			fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_tilt.png')
 
 
-			from scipy.misc import imsave
 			im = np.array(batch[0][0])
-			im = im.reshape([xsize,ysize,3])
+			im = im.reshape([299,299,3])
 			imsave('./tf_logs/' +BASE_DIR+'/'+prefix+'_image.png',im)
 
-		    cut_backgrounds.cut(10)   
 
 		train_step.run(feed_dict={
 					bottleneck_input: all_outputs,
@@ -400,7 +330,6 @@ def main(_):
 		
 	saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
 	train_writer.close()
-	test_writer.close()
 
 
 if __name__ == '__main__':
