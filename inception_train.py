@@ -55,27 +55,6 @@ def create_model_graph(model_info):
 			]))
 	return graph, bottleneck_tensor, resized_input_tensor
 
-def create_model_graph(model_info):
-	""""Creates a graph from saved GraphDef file and returns a Graph object.
-	Args:
-		model_info: Dictionary containing information about the model architecture.
-	Returns:
-		Graph holding the trained Inception network, and various tensors we'll be
-		manipulating.
-	"""
-	with tf.Graph().as_default() as graph:
-		model_path = os.path.join(FLAGS.model_dir, model_info['model_file_name'])
-	with gfile.FastGFile(model_path, 'rb') as f:
-		graph_def = tf.GraphDef()
-		graph_def.ParseFromString(f.read())
-		bottleneck_tensor, resized_input_tensor = (tf.import_graph_def(
-			graph_def,
-			name='',
-			return_elements=[
-				model_info['bottleneck_tensor_name'],
-				model_info['resized_input_tensor_name'],
-			]))
-	return graph, bottleneck_tensor, resized_input_tensor
 
 def maybe_download_and_extract(data_url):
 	"""Download and extract model tar file.
@@ -123,7 +102,7 @@ def create_model_info(architecture):
 		# pylint: disable=line-too-long
 		data_url = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
 		# pylint: enable=line-too-long
-		bottleneck_tensor_name = 'pool_3/_reshape:0'
+		bottleneck_tensor_name = 'mixed_10/join:0'#'pool_3/_reshape:0'
 		bottleneck_tensor_size = 2048
 		input_width = 299
 		input_height = 299
@@ -173,6 +152,7 @@ def main(_):
 
 	# Gather information about the model architecture we'll be using.
 	model_info = create_model_info(FLAGS.architecture)
+	#print(model_info)
 	if not model_info:
 		tf.logging.error('Did not recognize architecture flag')
 		return -1
@@ -181,7 +161,9 @@ def main(_):
 	maybe_download_and_extract(model_info['data_url'])
 	graph, bottleneck_tensor, resized_input_tensor = (
 	  create_model_graph(model_info))
-
+	
+	#print(bottleneck_tensor)
+	
 	# placeholders
 	a_ = tf.placeholder(tf.float32, shape=[None, 1])
 	e_ = tf.placeholder(tf.float32, shape=[None, 1])
@@ -192,13 +174,13 @@ def main(_):
 	dist_t = tf.placeholder(tf.int32, shape=[None,360])
 	keep_prob = tf.placeholder(tf.float32)
 
-	bottleneck_input = tf.placeholder(tf.float32, shape=[None, 2048])
+	bottleneck_input = tf.placeholder(tf.float32, shape=[None, 8, 8, 2048])
 
-	#print(ops[1].get_shape())
 	last = bottleneck_input
-	# shape = last.get_shape().as_list()
-	# f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
-	f1 = fc(last,out_size=1000,name='F1')
+	shape = last.get_shape().as_list()
+	print(shape)
+	f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
+	f1 = fc(f_flat,out_size=1000,name='F1')
 	# print(f1.get_shape())
 	f2 = fc(f1,out_size=500,name='F2')
 	f2_drop = f2 #tf.nn.dropout(f2, keep_prob)
@@ -224,13 +206,13 @@ def main(_):
 					or v.name=='ti/B_fc:0']
 	# print(train_vars)
 	with tf.name_scope('Optimizer'):
-	    train_step = tf.train.AdamOptimizer(1e-4).minimize(loss,var_list=train_vars)
+	    train_step = tf.train.AdamOptimizer(1e-3).minimize(loss,var_list=train_vars)
 
 	loss_summary = tf.summary.scalar( 'loss', loss )
 
 	merged_summary_op = tf.summary.merge_all()
 
-	BASE_DIR = 'b_inception'
+	BASE_DIR = 'f_inception'
 
 
 	train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
@@ -259,6 +241,7 @@ def main(_):
 		for bat in batch[0]:
 			bottleneck_values = sess.run(bottleneck_tensor,
                                  {resized_input_tensor: np.array(bat).reshape((1,299,299,3))})
+			#print(bottleneck_values.shape)
 			bottleneck_values = np.squeeze(bottleneck_values)
 			all_outputs.append(bottleneck_values)
 

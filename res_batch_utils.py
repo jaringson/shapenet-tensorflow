@@ -8,8 +8,8 @@ import numpy as np
 from scipy.misc import imread, imresize, imsave, imshow
 
 
-final_size = 224
-vgg_final = 224
+final_size = 50
+vgg_final = 299
 
 models = './models_airplanes/cub_cessna'
 #models = './training_150'
@@ -99,7 +99,7 @@ def next_batch(batch, testing=False):
 			pitch_d = int(np.degrees(pitch))
 			roll_d = int(np.degrees(roll))
 			extra_d = int(np.degrees(extra))
-			if abs(pitch_d) < 45 and abs(roll_d) < 90:
+			if abs(pitch_d) < 90 and abs(roll_d) < 180:
 				break	
 		img = Image.open(image)
 		img = img.rotate(extra_d)
@@ -124,11 +124,11 @@ def next_batch(batch, testing=False):
 		
 		#temp = Image.new('RGB',(vgg_final,vgg_final))
 
-		#for i in range(4):
-		#	for j in range(4):
+		#for i in range(6):
+		#	for j in range(6):
 		#		temp.paste(background, (50*i,50*j))
 		#background = temp
-		#background = background.resize((vgg_final,vgg_final))
+		background = background.resize((vgg_final,vgg_final))
 		#background.save('./test_background/'+str(i)+'.png')
 		#img = np.array(background.convert('L')).flatten() / 255.0
 		
