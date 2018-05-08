@@ -19,6 +19,7 @@ g_scope = 0
 #d_scope = 0
 noise = 0
 
+
 def weight_variable(shape):
   initial = tf.truncated_normal(shape, stddev=0.2)
   return tf.Variable(initial)
@@ -33,32 +34,6 @@ def max_pool_2x2(x):
 def LeakyReLU(x, alpha=0.2):
     return tf.maximum(alpha*x, x)
 
-def conv_t( x, filter_size=3, stride=1, num_filters=64, is_output=False,out_size=None, name="conv_t"):
-    with tf.variable_scope(name) as scope:
-    
-   
-        x_shape = x.get_shape().as_list()
-        W = tf.get_variable("W_conv_t", [filter_size, filter_size, num_filters,x_shape[3]], initializer = tf.contrib.layers.variance_scaling_initializer())
-        b = tf.get_variable("B_conv_t", [num_filters], initializer = tf.contrib.layers.variance_scaling_initializer())
-        
-        if out_size ==None:
-            outsize = x_shape
-            outsize[0] = BATCH_SIZE
-            outsize[1] *= 2
-            outsize[2] *= 2
-            outsize[3] = W.get_shape().as_list()[2]
-
-        h = []
-        
-
-        if not is_output:
-            h = tf.nn.relu(tf.nn.conv2d_transpose(x, W, output_shape=outsize, strides=[1, stride, stride, 1], padding="SAME") + b)        
-        
-        else:
-            h = tf.nn.conv2d_transpose(x, W, output_shape=outsize, strides=[1,stride,stride,1], padding='SAME') + b
-    
-
-        return h #result
 
 def conv( x, filter_size=3, stride=1, num_filters=64, is_output=False, name="conv"):
     with tf.variable_scope(name) as scope:
@@ -92,7 +67,6 @@ def fc( x, out_size=50, is_output=False, name="fc" ):
         return h
 
 
-
 # placeholders
 x = tf.placeholder(tf.float32, shape=[None,50*50*3])
 a_ = tf.placeholder(tf.float32, shape=[None, 1])
@@ -116,8 +90,10 @@ c3 = conv(c2,num_filters=192,stride=2,name='C3')
 print c3.get_shape()
 c4 = conv(c3,num_filters=768,stride=2,name='C4')
 print c4.get_shape()
+c5 = conv(c4,num_filters=768,stride=1,name='C5')
+print c5.get_shape()
 
-last = c4
+last = c5
 
 shape = last.get_shape().as_list()
 f_flat = tf.reshape(last,[-1,shape[1]*shape[2]*shape[3]])
@@ -136,12 +112,12 @@ with tf.name_scope('Cost'):
     loss_t = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_t, tf.float32)/sigma_) * tf.log(tf.clip_by_value(t_conv,1e-10,1.0)), axis=1)) 
     loss = loss_a+loss_e+loss_t 
 with tf.name_scope('Optimizer'):
-    train_step = tf.train.AdamOptimizer(1e-3).minimize(loss)
+    train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
 
 with tf.name_scope('Accuracy'):
-    a_acc = tf.reduce_mean(tf.abs(a_-a_conv))
-    e_acc = tf.reduce_mean(tf.abs(e_-e_conv)) 
-    t_acc = tf.reduce_mean(tf.abs(t_-t_conv))
+    a_acc = tf.reduce_mean(tf.abs(a_-tf.reduce_max(a_conv,axis=1)))
+    e_acc = tf.reduce_mean(tf.abs(e_-tf.reduce_max(e_conv,axis=1))) 
+    t_acc = tf.reduce_mean(tf.abs(t_-tf.reduce_max(t_conv,axis=1)))
 
 acc_summary = tf.summary.scalar( 'azimuth accuracy', a_acc )
 acc_summary = tf.summary.scalar( 'elevation accuracy', e_acc )
@@ -150,10 +126,6 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-
-
-#train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
-#test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
 
 sess.run(tf.global_variables_initializer())
 
