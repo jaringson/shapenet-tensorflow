@@ -94,7 +94,7 @@ def fc( x, out_size=50, is_output=False, name="fc" ):
 
 
 # placeholders
-x = tf.placeholder(tf.float32, shape=[None,150*150*3])
+x = tf.placeholder(tf.float32, shape=[None,50*50*3])
 a_ = tf.placeholder(tf.float32, shape=[None, 1])
 e_ = tf.placeholder(tf.float32, shape=[None, 1])
 t_ = tf.placeholder(tf.float32, shape=[None, 1])
@@ -106,7 +106,7 @@ dist_t = tf.placeholder(tf.int32, shape=[None,360])
 
 keep_prob = tf.placeholder(tf.float32)
 
-x_img = tf.reshape(x, [-1,150,150,3])
+x_img = tf.reshape(x, [-1,50,50,3])
 
 c1 = conv(x_img,num_filters=12,stride=2,name='C1')
 print c1.get_shape()
@@ -158,11 +158,11 @@ merged_summary_op = tf.summary.merge_all()
 sess.run(tf.global_variables_initializer())
 
 saver = tf.train.Saver()
-saver.restore(sess, 'tf_logs/q/shapenet.ckpt')
+saver.restore(sess, 'tf_logs/g_back/shapenet.ckpt')
 
 
 test_dir = './motion_capture/'
-out_dir = './testing_output_q/'
+out_dir = './testing_output_g-back/'
 
 all_pics = glob.glob(test_dir+'*.png')
 
@@ -181,9 +181,10 @@ print("step, azimuth, elevation, tilt, loss")
 
 for i in range(len(all_pics)):
     sigma_val = 1.0 #1.0/(1+i*0.001) 
-    kp_in = 0.50
+    kp_in = 1.0
 
     img = Image.open(test_dir + str(i)+'.png')
+    #img = img.resize((50,50))
     angles = all_views[i].split(' ')
 
 
@@ -223,22 +224,14 @@ for i in range(len(all_pics)):
     background.paste(img, (background.size[0]/2-img.size[0]/2 + np.random.randint(-20,20),
                                        background.size[1]/2-img.size[1]/2 + np.random.randint(-20,20)),img)
 
+    background = background.resize((50,50))
     background.save(out_dir+str(i)+'.png')
     img = np.array(background).flatten() / 255.0
     
-    summary_str,ac,ec,tc,loss_r,a_c,e_c,t_c = sess.run([
-                merged_summary_op,
-                a_acc,e_acc,t_acc,loss,
+    a_c,e_c,t_c = sess.run([
 		a_conv,e_conv,t_conv],
                 feed_dict={
                 x: [img.tolist()],
-                a_: [[yaw]],
-                e_: [[pitch]],
-                t_: [[roll]],
-		dist_a: [yaw_dist],
-		dist_e: [pitch_dist],
-		dist_t: [roll_dist],
-                sigma_: sigma_val,
                 keep_prob: kp_in})
     plt.clf()
     plt.bar(range(-180,180),a_c[0,:],1)
@@ -258,7 +251,7 @@ for i in range(len(all_pics)):
     plt.pause(0.00001)
     fig.savefig(out_dir+str(i)+'_tilt.png')
  
-    print(": %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
+    print(": %d "%(i))
     #writer.add_summary(summary_str,i)
 
 #saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
