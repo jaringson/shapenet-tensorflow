@@ -146,7 +146,7 @@ with tf.name_scope('Cost'):
     loss_t = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_t, tf.float32)/sigma_) * tf.log(tf.clip_by_value(t_conv,1e-10,1.0)), axis=1)) 
     loss = loss_a+loss_e+loss_t 
 with tf.name_scope('Optimizer'):
-    train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
+    train_step = tf.train.AdamOptimizer(5e-7).minimize(loss)
 
 with tf.name_scope('Accuracy'):
     a_acc = tf.reduce_mean(tf.abs(a_-tf.reduce_max(a_conv,axis=1)))
@@ -160,7 +160,7 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-BASE_DIR = 'a_back'
+BASE_DIR = 'k_back'
 
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
@@ -169,7 +169,7 @@ test_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/test")
 sess.run(tf.global_variables_initializer())
 
 saver = tf.train.Saver()
-#saver.restore(sess, 'tf_logs/q/shapenet.ckpt')
+saver.restore(sess, 'tf_logs/j_back/shapenet.ckpt')
 
 max_steps = 100000
 
@@ -177,7 +177,7 @@ fig = plt.figure(0)
 print("step, azimuth, elevation, tilt, loss")
 
 for i in range(max_steps):
-    sigma_val = 1.0 #1.0/(1+i*0.001) 
+    sigma_val = 1.0# 1.0/(1+i*0.001) 
     kp_in = 0.50
     batch = res_batch_utils.next_batch(50)
     '''print sess.run([

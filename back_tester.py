@@ -130,11 +130,11 @@ merged_summary_op = tf.summary.merge_all()
 sess.run(tf.global_variables_initializer())
 
 saver = tf.train.Saver()
-saver.restore(sess, 'tf_logs/g_back/shapenet.ckpt')
+saver.restore(sess, 'tf_logs/j_back/shapenet.ckpt')
 
 
-test_dir = './motion_capture/'
-out_dir = './testing_output_g-back/'
+test_dir = './mc_cessna/'
+out_dir = './testing_output_j-back/'
 
 all_pics = glob.glob(test_dir+'*.png')
 
