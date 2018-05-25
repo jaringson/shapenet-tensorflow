@@ -118,8 +118,8 @@ def next_batch(batch, testing=False):
 		#y = np.random.randint(0, h-final_size-1)
 
 		#background = background.crop((x, y, x+final_size, y+final_size))
-		background.paste(img, (background.size[0]/2-img.size[0]/2 + np.random.randint(-1,1), 
-				       background.size[1]/2-img.size[1]/2 + np.random.randint(-1,1)),img)
+		background.paste(img, (background.size[0]/2-img.size[0]/2 + np.random.randint(-10,10), 
+				       background.size[1]/2-img.size[1]/2 + np.random.randint(-10,10)),img)
 
 		#background.save('./test_background/'+str(i)+'.png')
 		#img = np.array(background.convert('L')).flatten() / 255.0
