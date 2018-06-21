@@ -17,6 +17,8 @@ from keras import backend as K
 # create the base pre-trained model
 base_model = InceptionV3(weights='imagenet', include_top=False)
 
+print(base_model.summary())
+
 # # add a global spatial average pooling layer
 # x = base_model.output
 # x = GlobalAveragePooling2D()(x)
