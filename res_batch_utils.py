@@ -29,7 +29,7 @@ for model in all_models:
 num_models = 1000
 
 def next_batch(batch, testing=False):
-	while True
+	while True:
 	    output = []
 	    output.append([])
 	    output.append([])

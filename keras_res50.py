@@ -14,25 +14,23 @@ from keras.models import Model
 from keras.layers import Dense, GlobalAveragePooling2D
 from keras import backend as K
 
-def customLoss(yTrue,yPred):
-	a_conv = yTrue[0]
-	e_conv = yTrue[1]
-	t_conv = yTrue[2]
+def a_customLoss(yTrue,yPred):
+	print(yTrue,yPred)
 
-	dist_a = yPred[0]
-	dist_e = yPred[1]
-	dist_t = yPred[2]
+        a_conv = yPred[0]
+
+	dist_a = yTrue[0]
+	#dist_e = yTrue[1]
+	#dist_t = yTrue[2]
+        sigma_ = 1.0
 	
 	loss_a = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_a, tf.float32)/sigma_) * tf.log(tf.clip_by_value(a_conv,1e-10,1.0)), axis=1))
-	loss_e = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_e, tf.float32)/sigma_) * tf.log(tf.clip_by_value(e_conv,1e-10,1.0)), axis=1))
-	loss_t = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_t, tf.float32)/sigma_) * tf.log(tf.clip_by_value(t_conv,1e-10,1.0)), axis=1)) 
-	loss = loss_a+loss_e+loss_t 
-	return loss
+	return loss_a
 
 # create the base pre-trained model
 base_model = InceptionV3(weights='imagenet', include_top=False)
 
-print(base_model.summary())
+#print(base_model.summary())
 
 # add a global spatial average pooling layer
 x = base_model.output
@@ -40,9 +38,9 @@ x = GlobalAveragePooling2D()(x)
 # let's add a fully-connected layer
 x = Dense(1024, activation='relu')(x)
 # and a logistic layer -- let's say we have 200 classes
-a_conv = Dense(360, activation='softmax')(x)
-e_conv = Dense(180, activation='softmax')(x)
-t_conv = Dense(360, activation='softmax')(x)
+a_conv = Dense(360, activation='softmax',name='a_conv')(x)
+e_conv = Dense(180, activation='softmax',name='e_conv')(x)
+t_conv = Dense(360, activation='softmax',name='t_conv')(x)
 
 # this is the model we will train
 model = Model(inputs=base_model.input, outputs=[a_conv,e_conv,t_conv])
@@ -53,7 +51,7 @@ for layer in base_model.layers:
     layer.trainable = False
 
 # compile the model (should be done *after* setting layers to non-trainable)
-model.compile(optimizer='rmsprop', loss=customLoss)
+model.compile(optimizer='rmsprop', loss={'a_conv':a_customLoss,'e_conv':e_customLoss,'t_conv':t_customLoss})
 
 out_dir = 'a_keras'
 steps_per_epoch = 150
