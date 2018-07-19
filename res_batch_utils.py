@@ -181,7 +181,7 @@ def next_batch(batch, testing=False):
 			    print 'Tried 10 times'
 			    yield []
 
-	    yield output
+	    yield output[0], output[1:6]
 
 
 if __name__ == '__main__':
