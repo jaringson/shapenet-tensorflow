@@ -6,6 +6,19 @@ import cut_backgrounds
 from scipy.misc import imsave
 import matplotlib.pyplot as plt
 
+SMALL_SIZE = 8
+MEDIUM_SIZE = 16
+BIGGER_SIZE = 16
+EXBIG_SIZE = 24
+
+plt.rc('font', size=EXBIG_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=BIGGER_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=BIGGER_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=BIGGER_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=BIGGER_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=BIGGER_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=EXBIG_SIZE)  # fontsize of the figure title
+
 tf.reset_default_graph()
 sess = tf.InteractiveSession()
 
@@ -56,7 +69,7 @@ def fc( x, out_size=50, is_output=False, name="fc" ):
         return h
 
 
-def get_stats(sess, batch, writer, fig, testing=False):
+def get_stats(sess, batch, writer, fig,i, testing=False):
     prefix = 'Training'
     if testing:
         prefix = 'Testing'
@@ -74,29 +87,47 @@ def get_stats(sess, batch, writer, fig, testing=False):
 		dist_t: batch[6],
                 sigma_: sigma_val,
                 keep_prob: kp_in})
+    y_max = np.max(a_c[0,:])+0.01*np.max(a_c[0,:])
     plt.clf()
-    plt.bar(range(-180,180),a_c[0,:],1)
-    plt.title(prefix+' Yaw: '+str(batch[1][0][0]*180/np.pi))
+    plt.bar(range(-180,180), a_c[0,:], 1, color='black')
+    plt.bar(batch[1][0][0]*180/np.pi, y_max, 0.2, edgecolor='red')
+    plt.title('Yaw')
+    plt.xticks(np.arange(-180,181,60))
+    plt.xlim([-181,181])
+    plt.ylim([0,y_max])
+    plt.xlabel('Yaw Angle (deg)')
     plt.pause(0.00001)
-    fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_azimuth.png')
+    fig.savefig('tf_logs/'+BASE_DIR+'/'+str(i)+prefix+'_azimuth.eps',format='eps')
 
+    p_max = np.max(e_c[0,:])+0.01*np.max(e_c[0,:])
     plt.clf()
-    plt.bar(range(-90,90),e_c[0,:],1)
-    plt.title(prefix+' Pitch: '+str(batch[2][0][0]*180/np.pi))
+    plt.bar(range(-90,90),e_c[0,:],1,color='black')
+    plt.bar(batch[2][0][0]*180/np.pi, p_max, 0.2, edgecolor='red')
+    plt.title('Pitch')
+    plt.xticks(np.arange(-90,91,60))
+    plt.xlim([-91,91])
+    plt.ylim([0,p_max])
+    plt.xlabel('Pitch Angle (deg)')
     plt.pause(0.00001)
-    fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_elevation.png')
+    fig.savefig('tf_logs/'+BASE_DIR+'/'+str(i)+prefix+'_elevation.eps',format='eps')
 	
+    r_max = np.max(t_c[0,:])+0.01*np.max(t_c[0,:])
     plt.clf()
-    plt.bar(range(-180,180),t_c[0,:],1)
-    plt.title(prefix+' Roll: '+str(batch[3][0][0]*180/np.pi))
+    plt.bar(range(-180,180),t_c[0,:],1,color='black')
+    plt.bar(batch[3][0][0]*180/np.pi, r_max, 0.2, edgecolor='red')
+    plt.title('Roll')
+    plt.xticks(np.arange(-180,181,60))
+    plt.xlim([-181,181]) 
+    plt.ylim([0,r_max])
+    plt.xlabel('Roll Angle (deg)')
     plt.pause(0.00001)
-    fig.savefig('tf_logs/'+BASE_DIR+'/'+prefix+'_tilt.png')
+    fig.savefig('tf_logs/'+BASE_DIR+'/'+str(i)+prefix+'_tilt.eps',format='eps')
 
 
     from scipy.misc import imsave
     im = np.array(batch[0][0])
     im = im.reshape([50,50,3])
-    imsave('./tf_logs/' +BASE_DIR+'/'+prefix+'_image.png',im)    
+    imsave('./tf_logs/' +BASE_DIR+'/'+str(i)+prefix+'_image.png',im)    
  
     print(prefix+": %d, %g, %g, %g, %g "%(i, ac, ec, tc, loss_r))
     writer.add_summary(summary_str,i)
@@ -146,7 +177,7 @@ with tf.name_scope('Cost'):
     loss_t = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_t, tf.float32)/sigma_) * tf.log(tf.clip_by_value(t_conv,1e-10,1.0)), axis=1)) 
     loss = loss_a+loss_e+loss_t 
 with tf.name_scope('Optimizer'):
-    train_step = tf.train.AdamOptimizer(5e-7).minimize(loss)
+    train_step = tf.train.AdamOptimizer(5e-6).minimize(loss)
 
 with tf.name_scope('Accuracy'):
     a_acc = tf.reduce_mean(tf.abs(a_-tf.reduce_max(a_conv,axis=1)))
@@ -160,7 +191,7 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-BASE_DIR = 'k_back'
+BASE_DIR = 'ex_plots_j_5'
 
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
@@ -195,12 +226,12 @@ for i in range(max_steps):
                 keep_prob: kp_in})
     '''
     if i%100 == 0:
-        get_stats(sess, batch, train_writer, fig)
+        get_stats(sess, batch, train_writer, fig, i)
         saver.save(sess, "tf_logs/"+BASE_DIR+"/shapenet.ckpt")
     
     if i%500 == 0:
         test_batch = res_batch_utils.next_batch(50, testing=True)
-        get_stats(sess, test_batch, test_writer, fig, testing=True)
+        get_stats(sess, test_batch, test_writer, fig,i, testing=True)
         cut_backgrounds.cut(10)   
  
     train_step.run(feed_dict={

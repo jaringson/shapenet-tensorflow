@@ -9,6 +9,19 @@ import os, glob
 from PIL import Image
 
 
+SMALL_SIZE = 8
+MEDIUM_SIZE = 10
+BIGGER_SIZE = 16
+
+plt.rc('font', size=BIGGER_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=BIGGER_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=BIGGER_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=BIGGER_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=BIGGER_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=BIGGER_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
+
 tf.reset_default_graph()
 sess = tf.InteractiveSession()
 
@@ -133,8 +146,8 @@ saver = tf.train.Saver()
 saver.restore(sess, 'tf_logs/j_back/shapenet.ckpt')
 
 
-test_dir = './mc_cessna/'
-out_dir = './testing_output_j-back/'
+test_dir = './mc_timber/'
+out_dir = './testing_output_j-back_t/'
 
 all_pics = glob.glob(test_dir+'*.png')
 
@@ -205,23 +218,42 @@ for i in range(len(all_pics)):
                 feed_dict={
                 x: [img.tolist()],
                 keep_prob: kp_in})
+    
+    y_max = np.max(a_c[0,:])+0.01*np.max(a_c[0,:])
     plt.clf()
-    plt.bar(range(-180,180),a_c[0,:],1)
-    plt.title('Yaw: '+str(yaw_d))
+    plt.bar(range(-180,180), a_c[0,:], 1, color='black')
+    plt.bar(yaw_d, y_max, 0.2, edgecolor='red')
+    plt.title('Yaw')
+    plt.xticks(np.arange(-180,181,60))
+    plt.xlim([-181,181])
+    plt.ylim([0,y_max])
+    plt.xlabel('Yaw Angle (deg)')
     plt.pause(0.00001)
-    fig.savefig(out_dir+str(i)+'_azimuth.png')
+    fig.savefig(out_dir+str(i)+'_azimuth.eps',format='eps')
 
+    p_max = np.max(e_c[0,:])+0.01*np.max(e_c[0,:])
     plt.clf()
-    plt.bar(range(-90,90),e_c[0,:],1)
-    plt.title('Pitch: '+str(pitch_d))
+    plt.bar(range(-90,90),e_c[0,:],1,color='black')
+    plt.bar(pitch_d, p_max, 0.2, edgecolor='red')
+    plt.title('Pitch')
+    plt.xticks(np.arange(-90,91,60))
+    plt.xlim([-91,91])
+    plt.ylim([0,p_max])
+    plt.xlabel('Pitch Angle (deg)')
     plt.pause(0.00001)
-    fig.savefig(out_dir+str(i)+'_elevation.png')
-	
+    fig.savefig(out_dir+str(i)+'_elevation.eps',format='eps')
+
+    r_max = np.max(t_c[0,:])+0.01*np.max(t_c[0,:])
     plt.clf()
-    plt.bar(range(-180,180),t_c[0,:],1)
-    plt.title('Roll: '+str(roll_d))
+    plt.bar(range(-180,180),t_c[0,:],1,color='black')
+    plt.bar(roll_d, r_max, 0.2, edgecolor='red')
+    plt.title('Roll')
+    plt.xticks(np.arange(-180,181,60))
+    plt.xlim([-181,181])
+    plt.ylim([0,r_max])
+    plt.xlabel('Roll Angle (deg)')
     plt.pause(0.00001)
-    fig.savefig(out_dir+str(i)+'_tilt.png')
+    fig.savefig(out_dir+str(i)+'_tilt.eps',format='eps')
  
     print(": %d "%(i))
     #writer.add_summary(summary_str,i)
