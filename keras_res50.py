@@ -11,21 +11,25 @@ from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, CSVLogg
 from keras.applications.inception_v3 import InceptionV3
 from keras.preprocessing import image
 from keras.models import Model
-from keras.layers import Dense, GlobalAveragePooling2D
+from keras.layers import average, add, Input, Lambda, Dense, GlobalAveragePooling2D, concatenate
 from keras import backend as K
+import os
+import time
 
-def a_customLoss(yTrue,yPred):
-	print(yTrue,yPred)
+sess = tf.Session()
+K.set_session(sess)
 
-        a_conv = yPred[0]
+def make_loss(part_conv, dist_part):
+    #loss_part = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_part, tf.float32)/1.0) * tf.log(tf.clip_by_value(part_conv,1e-10,1.0)), axis=1))
+    loss_part = tf.exp(-tf.cast(dist_part, tf.float32)/1.0) * tf.log(tf.clip_by_value(part_conv,1e-10,1.0))
+    return loss_part
+    
+def customLoss(yTrue,yPred):
+    return yPred
 
-	dist_a = yTrue[0]
-	#dist_e = yTrue[1]
-	#dist_t = yTrue[2]
-        sigma_ = 1.0
-	
-	loss_a = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_a, tf.float32)/sigma_) * tf.log(tf.clip_by_value(a_conv,1e-10,1.0)), axis=1))
-	return loss_a
+dist_a = Input(shape=(360,1),name='dist_a')
+dist_e = Input(shape=(180,1),name='dist_e')
+dist_t = Input(shape=(360,1),name='dist_t')
 
 # create the base pre-trained model
 base_model = InceptionV3(weights='imagenet', include_top=False)
@@ -42,16 +46,33 @@ a_conv = Dense(360, activation='softmax',name='a_conv')(x)
 e_conv = Dense(180, activation='softmax',name='e_conv')(x)
 t_conv = Dense(360, activation='softmax',name='t_conv')(x)
 
-# this is the model we will train
-model = Model(inputs=base_model.input, outputs=[a_conv,e_conv,t_conv])
+loss_a = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_a, tf.float32)/sigma_) * tf.log(tf.clip_by_value(a_conv,1e-10,1.0)), axis=1))
+loss_e = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_e, tf.float32)/sigma_) * tf.log(tf.clip_by_value(e_conv,1e-10,1.0)), axis=1))
+loss_t = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_t, tf.float32)/sigma_) * tf.log(tf.clip_by_value(t_conv,1e-10,1.0)), axis=1))
+
+loss = loss_a+lost_e+loss_t
+
+
+## this is the model we will train
+#model = Model(inputs=[base_model.input,dist_a,dist_e,dist_t], outputs=loss)
+
 
 # first: train only the top layers (which were randomly initialized)
 # i.e. freeze all convolutional InceptionV3 layers
 for layer in base_model.layers:
     layer.trainable = False
 
+train_step = tf.train.AdamOptimizer(5e-6).minimize(loss)
+
+sess.run(tf.global_variables_initializer())
+
+for i in range(max_steps):
+test_batch = res_batch_utils.next_batch(50, testing=True)
+
+
+'''
 # compile the model (should be done *after* setting layers to non-trainable)
-model.compile(optimizer='rmsprop', loss={'a_conv':a_customLoss,'e_conv':e_customLoss,'t_conv':t_customLoss})
+model.compile(optimizer='rmsprop', loss=customLoss)
 
 out_dir = 'a_keras'
 steps_per_epoch = 150
@@ -122,4 +143,4 @@ model.fit_generator(
             validation_steps=40)
 
 
-
+'''

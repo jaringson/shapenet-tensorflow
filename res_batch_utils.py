@@ -139,9 +139,9 @@ def next_batch(batch, testing=False):
 	                    gauss = gauss.reshape(final_size,final_size,3)
 	                    noise_img = np.array(background) + gauss
 	                
-	                    img = noise_img.flatten() / 255.0
+	                    img = noise_img / 255.0
 			else:
-			    img = np.array(background).flatten() / 255.0 
+			    img = np.array(background) / 255.0 
 			#print img.shape
 				
 			yaw_dist = []
@@ -164,7 +164,7 @@ def next_batch(batch, testing=False):
 			else:
 			    roll_dist = np.concatenate(( np.arange(180-roll_d,180), np.arange(180,0,-1), np.arange(0,180-roll_d) ))
 
-			output[0].append(img.tolist())
+			output[0].append(img)
 			output[1].append([yaw])
 			output[2].append([pitch])
 			output[3].append([roll])
@@ -181,7 +181,7 @@ def next_batch(batch, testing=False):
 			    print 'Tried 10 times'
 			    yield []
 
-	    yield output[0], output[1:6]
+	    yield  {'input_1':np.array(output[0]), 'input_2':np.array(output[4]), 'input_3':np.array(output[5]), 'input_4':np.array(output[6])}, np.zeros(50)
 
 
 if __name__ == '__main__':
