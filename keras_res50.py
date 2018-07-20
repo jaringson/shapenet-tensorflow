@@ -130,21 +130,10 @@ loss_t = tf.reduce_mean(-tf.reduce_sum(tf.exp(-tf.cast(dist_t, tf.float32)/sigma
 loss = loss_a+lost_e+loss_t
 
 
-## this is the model we will train
-#model = Model(inputs=[base_model.input,dist_a,dist_e,dist_t], outputs=loss)
-
-
 # first: train only the top layers (which were randomly initialized)
 # i.e. freeze all convolutional InceptionV3 layers
 for layer in base_model.layers:
     layer.trainable = False
-
-train_step = tf.train.AdamOptimizer(5e-6).minimize(loss)
-
-sess.run(tf.global_variables_initializer())
-
-for i in range(max_steps):
-test_batch = res_batch_utils.next_batch(50, testing=True)
 
 
 with tf.name_scope('Optimizer'):
