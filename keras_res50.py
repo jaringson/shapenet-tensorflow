@@ -152,7 +152,7 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-BASE_DIR = 'a_keras'
+BASE_DIR = 'b_keras'
 
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
