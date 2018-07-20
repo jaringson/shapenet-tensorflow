@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, CSVLogger
 
 from keras.applications.inception_v3 import InceptionV3
+from keras.applications.vgg16 import VGG16
 from keras.preprocessing import image
 from keras.models import Model
 from keras.layers import average, add, Input, Lambda, Dense, GlobalAveragePooling2D, concatenate
@@ -110,7 +111,7 @@ dist_t = tf.placeholder(tf.int32, shape=[None,360])
 keep_prob = tf.placeholder(tf.float32)
 
 # create the base pre-trained model
-base_model = InceptionV3(weights='imagenet', include_top=False)(x)
+base_model = VGG16(weights='imagenet', include_top=False)(x)
 
 #print(base_model.summary())
 
