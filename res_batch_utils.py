@@ -29,159 +29,158 @@ for model in all_models:
 num_models = 1000
 
 def next_batch(batch, testing=False):
-	while True:
-	    output = []
-	    output.append([])
-	    output.append([])
-	    output.append([])
-	    output.append([])
-	    output.append([])
-	    output.append([])
-	    output.append([])
+    output = []
+    output.append([])
+    output.append([])
+    output.append([])
+    output.append([])
+    output.append([])
+    output.append([])
+    output.append([])
 
-	    for i in range(batch):
-		stay_err = True
-		while_i = 0
-		while stay_err:
-		    while_i += 1
-		    try:
-			
-			while True: 
-				model_i = np.random.randint(len(all_models)-1)
-				image_i = np.random.randint(num_models-50)
-				if testing:
-				    model_i = np.random.randint(len(all_models)) 
-				    image_i = np.random.randint(num_models-50, 1000)
-				    if model_i == len(all_models) - 1:
-					image_i = np.random.randint(1000)
-
-				model = all_models[model_i]
-				image = model+'/'+str(image_i)+'.png'
-				#print image
-				#img = Image.open(image)
-
-				angles = all_views[model_i][image_i].split(' ')
-				
-				azim = np.radians(int(angles[0]))
-				ele = np.radians(int(angles[1]))
-				tilt = np.radians(int(angles[2]))	
-
-				extra = np.radians(np.random.randint(-90,90))	
-
-				Rt = np.array([[1,0,0],
-					  [0,np.cos(-tilt),-np.sin(-tilt)],
-					  [0,np.sin(-tilt),np.cos(-tilt)]])
-
-				Re = np.array([[np.cos(-ele),0,np.sin(-ele)],
-					  [0,1,0],
-					  [-np.sin(-ele),0,np.cos(-ele)]])
-
-				Ra = np.array([[np.cos(azim),-np.sin(azim),0],
-					  [np.sin(azim),np.cos(azim),0],
-					  [0,0,1]])
-
-				# rotates the plane to face you instead of away from you
-				Rrev = np.array([[-1,0,0], 
-					  [0,-1,0],
-					  [0,0,1]])
-
-				Rextra = np.array([[1,0,0],
-					  [0,np.cos(-extra),-np.sin(-extra)],
-					  [0,np.sin(-extra),np.cos(-extra)]])
-				
-				R = Rextra.dot(Rrev).dot(Rt).dot(Re).dot(Ra)
-
-				pitch = -np.arcsin(R[2,0])
-				roll = np.arctan2(R[2,1],R[2,2])
-				yaw = np.arctan2(R[1,0],R[0,0])
-				
-				yaw_d = int(np.degrees(yaw))
-				pitch_d = int(np.degrees(pitch))
-				roll_d = int(np.degrees(roll))
-				extra_d = int(np.degrees(extra))
-				if abs(pitch_d) < 45 and abs(roll_d) < 90:
-					break	
-			img = Image.open(image)
-			img = img.rotate(extra_d)
-			upsize = np.random.randint(20,30)
-			img = img.resize((final_size+upsize,final_size+upsize))
-
-			# pixelSize = np.random.randint(1,5)
+    for i in range(batch):
+	stay_err = True
+	while_i = 0
+	while stay_err:
+	    while_i += 1
+	    try:
 		
-			# img = img.resize((img.size[0]/pixelSize, img.size[1]/pixelSize), Image.NEAREST)
-			# img = img.resize((img.size[0]*pixelSize, img.size[1]*pixelSize), Image.NEAREST)
+		while True: 
+			model_i = np.random.randint(len(all_models)-1)
+			image_i = np.random.randint(num_models-50)
+			if testing:
+			    model_i = np.random.randint(len(all_models)) 
+			    image_i = np.random.randint(num_models-50, 1000)
+			    if model_i == len(all_models) - 1:
+				image_i = np.random.randint(1000)
+
+			model = all_models[model_i]
+			image = model+'/'+str(image_i)+'.png'
+			#print image
+			#img = Image.open(image)
+
+			angles = all_views[model_i][image_i].split(' ')
 			
-			#background = Image.open(np.random.choice(all_backgrounds))
-			rand_back = all_backgrounds[np.random.randint(len(all_backgrounds))]  
-			background = Image.open(rand_back).resize((final_size,final_size))
-			#w, h = background.size
-			#x = np.random.randint(0, w-final_size-1)
-			#y = np.random.randint(0, h-final_size-1)
+			azim = np.radians(int(angles[0]))
+			ele = np.radians(int(angles[1]))
+			tilt = np.radians(int(angles[2]))	
 
-			#background = background.crop((x, y, x+final_size, y+final_size))
-			background.paste(img, (background.size[0]/2-img.size[0]/2 + np.random.randint(-10,10), 
-					       background.size[1]/2-img.size[1]/2 + np.random.randint(-10,10)),img)
+			extra = np.radians(np.random.randint(-90,90))	
 
-			#background.save('./test_background/'+str(i)+'.png')
-			#img = np.array(background.convert('L')).flatten() / 255.0
+			Rt = np.array([[1,0,0],
+				  [0,np.cos(-tilt),-np.sin(-tilt)],
+				  [0,np.sin(-tilt),np.cos(-tilt)]])
+
+			Re = np.array([[np.cos(-ele),0,np.sin(-ele)],
+				  [0,1,0],
+				  [-np.sin(-ele),0,np.cos(-ele)]])
+
+			Ra = np.array([[np.cos(azim),-np.sin(azim),0],
+				  [np.sin(azim),np.cos(azim),0],
+				  [0,0,1]])
+
+			# rotates the plane to face you instead of away from you
+			Rrev = np.array([[-1,0,0], 
+				  [0,-1,0],
+				  [0,0,1]])
+
+			Rextra = np.array([[1,0,0],
+				  [0,np.cos(-extra),-np.sin(-extra)],
+				  [0,np.sin(-extra),np.cos(-extra)]])
 			
-	                ## Trying random noise addition
-	                #noise = np.random.randn(final_size,final_size,3)                
-	                #noise = noise.reshape(final_size,final_size,3)
-	                #noise_img = np.array(background) + np.array(background) * noise
-			if np.random.randint(2):
-	                    ## Gausian noise
-	                    mean = np.random.randint(0,50)
-	                    var = np.random.randint(0,200)
-	                    #print(var)
-	                    sigma = var**0.5
-	                    gauss = np.random.normal(mean,sigma,(final_size,final_size,3))
-	                    gauss = gauss.reshape(final_size,final_size,3)
-	                    noise_img = np.array(background) + gauss
-	                
-	                    img = noise_img / 255.0
-			else:
-			    img = np.array(background) / 255.0 
-			#print img.shape
-				
-			yaw_dist = []
-			pitch_dist = []
-			roll_dist = [] 
+			R = Rextra.dot(Rrev).dot(Rt).dot(Re).dot(Ra)
 
+			pitch = -np.arcsin(R[2,0])
+			roll = np.arctan2(R[2,1],R[2,2])
+			yaw = np.arctan2(R[1,0],R[0,0])
 			
-			if yaw_d < 0:
-			    yaw_dist = np.concatenate(( np.arange(180+yaw_d,0,-1), np.arange(0,180), np.arange(180, 180+yaw_d, -1) ))	
-			else:
-			    yaw_dist = np.concatenate(( np.arange(180-yaw_d,180), np.arange(180,0,-1), np.arange(0,180-yaw_d) ))
+			yaw_d = int(np.degrees(yaw))
+			pitch_d = int(np.degrees(pitch))
+			roll_d = int(np.degrees(roll))
+			extra_d = int(np.degrees(extra))
+			if abs(pitch_d) < 45 and abs(roll_d) < 90:
+				break	
+		img = Image.open(image)
+		img = img.rotate(extra_d)
+		upsize = np.random.randint(20,30)
+		img = img.resize((final_size+upsize,final_size+upsize))
+
+		# pixelSize = np.random.randint(1,5)
+	
+		# img = img.resize((img.size[0]/pixelSize, img.size[1]/pixelSize), Image.NEAREST)
+		# img = img.resize((img.size[0]*pixelSize, img.size[1]*pixelSize), Image.NEAREST)
+		
+		#background = Image.open(np.random.choice(all_backgrounds))
+		rand_back = all_backgrounds[np.random.randint(len(all_backgrounds))]  
+		background = Image.open(rand_back).resize((final_size,final_size))
+		#w, h = background.size
+		#x = np.random.randint(0, w-final_size-1)
+		#y = np.random.randint(0, h-final_size-1)
+
+		#background = background.crop((x, y, x+final_size, y+final_size))
+		background.paste(img, (background.size[0]/2-img.size[0]/2 + np.random.randint(-10,10), 
+				       background.size[1]/2-img.size[1]/2 + np.random.randint(-10,10)),img)
+
+		#background.save('./test_background/'+str(i)+'.png')
+		#img = np.array(background.convert('L')).flatten() / 255.0
+		
+                ## Trying random noise addition
+                #noise = np.random.randn(final_size,final_size,3)                
+                #noise = noise.reshape(final_size,final_size,3)
+                #noise_img = np.array(background) + np.array(background) * noise
+		if np.random.randint(2):
+                    ## Gausian noise
+                    mean = np.random.randint(0,50)
+                    var = np.random.randint(0,200)
+                    #print(var)
+                    sigma = var**0.5
+                    gauss = np.random.normal(mean,sigma,(final_size,final_size,3))
+                    gauss = gauss.reshape(final_size,final_size,3)
+                    noise_img = np.array(background) + gauss
+                
+                    img = noise_img.flatten() / 255.0
+		else:
+		    img = np.array(background).flatten() / 255.0 
+		#print img.shape
 			
-			if pitch_d  < 0:
-			    pitch_dist = np.concatenate(( np.arange(90+pitch_d,0,-1), np.arange(0,90), np.arange(90, 90-pitch_d) ))
-			else:
-			    pitch_dist = np.concatenate(( np.arange(90+pitch_d,90,-1), np.arange(90,0,-1), np.arange(0,90-pitch_d) ))
-			    
-			if roll_d < 0:
-			    roll_dist = np.concatenate(( np.arange(180+roll_d,0,-1), np.arange(0,180), np.arange(180, 180+roll_d, -1) ))	
-			else:
-			    roll_dist = np.concatenate(( np.arange(180-roll_d,180), np.arange(180,0,-1), np.arange(0,180-roll_d) ))
+		yaw_dist = []
+		pitch_dist = []
+		roll_dist = [] 
 
-			output[0].append(img)
-			output[1].append([yaw])
-			output[2].append([pitch])
-			output[3].append([roll])
-			output[4].append(yaw_dist)
-			output[5].append(pitch_dist)
-			output[6].append(roll_dist)
-			stay_err = False
-			#temp = stay
-		    except:
-			e = sys.exc_info()
-			print while_i, e
-			stay_err = True
-			if while_i == 10:
-			    print 'Tried 10 times'
-			    yield []
+		
+		if yaw_d < 0:
+		    yaw_dist = np.concatenate(( np.arange(180+yaw_d,0,-1), np.arange(0,180), np.arange(180, 180+yaw_d, -1) ))	
+		else:
+		    yaw_dist = np.concatenate(( np.arange(180-yaw_d,180), np.arange(180,0,-1), np.arange(0,180-yaw_d) ))
+		
+		if pitch_d  < 0:
+		    pitch_dist = np.concatenate(( np.arange(90+pitch_d,0,-1), np.arange(0,90), np.arange(90, 90-pitch_d) ))
+		else:
+		    pitch_dist = np.concatenate(( np.arange(90+pitch_d,90,-1), np.arange(90,0,-1), np.arange(0,90-pitch_d) ))
+		    
+		if roll_d < 0:
+		    roll_dist = np.concatenate(( np.arange(180+roll_d,0,-1), np.arange(0,180), np.arange(180, 180+roll_d, -1) ))	
+		else:
+		    roll_dist = np.concatenate(( np.arange(180-roll_d,180), np.arange(180,0,-1), np.arange(0,180-roll_d) ))
 
-	    yield  {'input_1':np.array(output[0]), 'input_2':np.array(output[4]), 'input_3':np.array(output[5]), 'input_4':np.array(output[6])}, np.zeros(50)
+		output[0].append(img.tolist())
+		output[1].append([yaw])
+		output[2].append([pitch])
+		output[3].append([roll])
+		output[4].append(yaw_dist)
+		output[5].append(pitch_dist)
+		output[6].append(roll_dist)
+		stay_err = False
+		#temp = stay
+	    except:
+		e = sys.exc_info()
+		print while_i, e
+		stay_err = True
+		if while_i == 10:
+		    print 'Tried 10 times'
+		    return
+
+    return output
 
 
 if __name__ == '__main__':
