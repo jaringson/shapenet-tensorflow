@@ -111,7 +111,7 @@ dist_t = tf.placeholder(tf.int32, shape=[None,360])
 keep_prob = tf.placeholder(tf.float32)
 
 # create the base pre-trained model
-base_model = VGG16(weights='imagenet', include_top=False)(x)
+base_model = InceptionV3(weights='imagenet', include_top=False)(x)
 
 #print(base_model.summary())
 
@@ -152,7 +152,7 @@ loss_summary = tf.summary.scalar( 'loss', loss )
 
 merged_summary_op = tf.summary.merge_all()
 
-BASE_DIR = 'b_keras'
+BASE_DIR = 'a_keras'
 
 
 train_writer = tf.summary.FileWriter("./tf_logs/"+BASE_DIR+"/train",graph=sess.graph)
@@ -163,11 +163,11 @@ sess.run(tf.global_variables_initializer())
 saver = tf.train.Saver()
 # saver.restore(sess, 'tf_logs/j_back/shapenet.ckpt')
 
-max_steps = 100000
+max_steps = 1 # 00000
 
 fig = plt.figure(0)
 print("step, azimuth, elevation, tilt, loss")
-
+temp = p *10
 for i in range(max_steps):
     sigma_val = 1.0# 1.0/(1+i*0.001) 
     kp_in = 0.50
